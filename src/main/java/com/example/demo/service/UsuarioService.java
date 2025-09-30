@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.entity.Usuario;
 import com.example.demo.repository.UsuarioRepository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -11,6 +12,9 @@ public class UsuarioService {
 
     public UsuarioService(UsuarioRepository repository) {
         this.repository = repository;
+    }
+    public List<Usuario> listarUsuarioServive(){
+        return repository.findAll();
     }
     public Optional<Usuario> obtenerUsuarioPorId(Integer id) {
         return repository.findById(id);

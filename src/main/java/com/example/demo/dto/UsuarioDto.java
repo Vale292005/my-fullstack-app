@@ -6,6 +6,8 @@ public class UsuarioDto {
     private String email;
     private int edad;
 
+    private String contrasenha;
+
     public String getNombre() {
         return nombre;
     }
@@ -26,9 +28,7 @@ public class UsuarioDto {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public void setEmail(String email) {this.email = email;}
 
     public int getEdad() {
         return edad;
@@ -37,4 +37,9 @@ public class UsuarioDto {
     public void setEdad(int edad) {
         this.edad = edad;
     }
+
+    public String getContrasenha() { return contrasenha;}
+
+    public void setContrasenha(String contrasenha) { this.contrasenha = contrasenha;}
+
 }

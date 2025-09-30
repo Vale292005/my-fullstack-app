@@ -6,14 +6,16 @@ public class Usuario {
     private String telefono;
     private String email;
     private int edad;
+    private String contrasenha;
 
     public Usuario(){}
-    public Usuario(int id, String nombre, String telefono, String email, int edad) {
+    public Usuario(int id, String nombre, String telefono, String email, int edad, String contrasenha) {
         this.id = id;
         this.nombre = nombre;
         this.telefono = telefono;
         this.email = email;
         this.edad = edad;
+        this.contrasenha=contrasenha;
     }
 
 
@@ -56,5 +58,13 @@ public class Usuario {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getContrasenha() {
+        return contrasenha;
+    }
+
+    public void setContrasenha(String contrasenha) {
+        this.contrasenha = contrasenha;
     }
 }

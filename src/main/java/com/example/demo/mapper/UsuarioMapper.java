@@ -10,6 +10,7 @@ public class UsuarioMapper {
         dto.setTelefono(u.getTelefono());
         dto.setEmail(u.getEmail());
         dto.setEdad(u.getEdad());
+        dto.setContrasenha((u.getContrasenha()));
         return dto;
     }
     public static Usuario toEntity(UsuarioDto dto){
@@ -18,6 +19,7 @@ public class UsuarioMapper {
         usuario.setTelefono(dto.getTelefono());
         usuario.setEmail(dto.getEmail());
         usuario.setEdad(dto.getEdad());
+        usuario.setContrasenha((dto.getContrasenha()));
         return usuario;
     }
 }
