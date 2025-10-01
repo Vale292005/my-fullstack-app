@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.LoginRequestDto;
-import com.example.demo.dto.ResetPassword;
-import com.example.demo.dto.ResetPasswordRequestDto;
-import com.example.demo.dto.UsuarioDto;
+import com.example.demo.dto.*;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.service.UsuarioService;
@@ -57,7 +54,7 @@ public class UsuarioController {
     }
     @PostMapping("/cambiar-contrasenha")
     public ResponseEntity<String> cambiarPassword(@RequestBody ChangePasswordDto dto){
-        service.cambiarPasword(dto.getCurrentPassword(),dto.getPassword());
+        service.cambiarPassword(dto.getEmail(),dto.getCurrentPassword(),dto.getNewPassword());
         return ResponseEntity.ok("contraseña cambiada");
     }
 }

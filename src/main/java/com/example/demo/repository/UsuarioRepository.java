@@ -20,6 +20,7 @@ public class UsuarioRepository {
         usuarios.put(usuario.getId(),usuario);
         return usuario;
     }
+    public Optional<Usuario>findByEmail(String email){return Optional.ofNullable(usuarios.get(email));}
     public void delete(int id){
         usuarios.remove(id);
     }

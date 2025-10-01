@@ -1,8 +1,18 @@
 package com.example.demo.dto;
 
-public class changePaswordDto {
+public class ChangePasswordDto {
     private String currentPassword;
     private String newPassword;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    private String email;
 
     public String getCurrentPassword() {
         return currentPassword;
