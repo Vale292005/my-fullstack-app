@@ -2,16 +2,23 @@ package com.example.demo.service;
 
 import com.example.demo.entity.Usuario;
 import com.example.demo.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
 public class UsuarioService {
     private final UsuarioRepository repository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailService emailService;
     private Map<String, String> tokensPorEmail = new HashMap<>();
 
-    public UsuarioService(UsuarioRepository repository) {
+    public UsuarioService(UsuarioRepository repository,BCryptPasswordEncoder passwordEncoder,EmailService emailService) {
         this.repository = repository;
+        this.passwordEncoder=passwordEncoder;
+        this.emailService=emailService;
     }
     public List<Usuario> listarUsuarioServive(){
         return repository.findAll();
@@ -80,6 +87,14 @@ public class UsuarioService {
 
         usuario.setContrasenha(nuevaContrasenha);
         repository.save(usuario);
+    }
+    public Usuario login(String email,String contrasenha){
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        if(!passwordEncoder.matches(contrasenha,usuario.getContrasenha())){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"contraseña incorrecta");
+        }
+        return usuario;
     }
 
 
