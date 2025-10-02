@@ -1,5 +1,7 @@
 package com.example.demo.dto;
 
+import com.example.demo.Enum.Rol;
+
 public class UsuarioDto {
     private String nombre;
     private String telefono;
@@ -7,6 +9,7 @@ public class UsuarioDto {
     private int edad;
 
     private String contrasenha;
+    private Rol rol;
 
     public String getNombre() {
         return nombre;
@@ -42,4 +45,6 @@ public class UsuarioDto {
 
     public void setContrasenha(String contrasenha) { this.contrasenha = contrasenha;}
 
+    public Rol getRol() {return rol;}
+    public void setRol(Rol rol) {this.rol = rol;}
 }

@@ -1,19 +1,21 @@
 package com.example.demo.controller;
 
+import com.example.demo.Enum.Rol;
 import com.example.demo.dto.*;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+import java.lang.classfile.Opcode;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+@RestController
+@RequestMapping("/usuarios")
 public class UsuarioController {
     private final UsuarioService service;
 
@@ -21,13 +23,13 @@ public class UsuarioController {
         this.service = service;
     }
 
-    //endPoint GET
+    @GetMapping
     public List<UsuarioDto> obtenerTodas() {
         List<Usuario> usuario = service.listarUsuarioServive();
         return usuario.stream().map(UsuarioMapper::toDto).collect(Collectors.toList());
     }
 
-    //endPoint POST
+    @PostMapping
     public UsuarioDto crear(UsuarioDto dto) {
         Usuario usuario = UsuarioMapper.toEntity(dto);
         Usuario creado = service.crearUsuario(usuario);
@@ -41,11 +43,16 @@ public class UsuarioController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<UsuarioDto> registrar(@RequestBody UsuarioDto usuarioDto) {
-        Usuario usuario = UsuarioMapper.toEntity(usuarioDto);
-        Usuario creado = service.crearUsuario(usuario);
-        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toDto(creado));
+    public ResponseEntity<?> registrar(@RequestBody UsuarioDto usuarioDto) {
+        try {
+            Usuario usuario = UsuarioMapper.toEntity(usuarioDto);
+            Usuario creado = service.crearUsuario(usuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toDto(creado));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
+
 
     @PostMapping("/recuperar-contrasenha")
     public ResponseEntity<String> recuperarContrasenha(@RequestBody ResetPasswordRequestDto requestDto) {
@@ -73,5 +80,21 @@ public class UsuarioController {
     public ResponseEntity<?> buscarEmail(@RequestParam String email) {
         return ResponseEntity.ok(service.findByEmail(email));
     }
+    @GetMapping("/roles")
+    public ResponseEntity<?> listByRol(@RequestParam("rol") Rol rol){
+        Optional<List<Usuario>> usuariosOpt = service.findByRol(rol);
+
+        if (usuariosOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No se encontraron usuarios con el rol " + rol);
+        }
+
+        List<UsuarioDto> dtos = usuariosOpt.get().stream()
+                .map(UsuarioMapper::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
+
 
 }

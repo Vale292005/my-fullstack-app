@@ -1,8 +1,12 @@
 package com.example.demo.repository;
 
+import com.example.demo.Enum.Rol;
 import com.example.demo.entity.Usuario;
+import org.springframework.stereotype.Repository;
 
 import java.util.*;
+import java.util.stream.Collectors;
+@Repository
 
 public class UsuarioRepository {
     private Map<Integer,Usuario> usuarios= new HashMap<>();
@@ -20,16 +24,34 @@ public class UsuarioRepository {
         usuarios.put(usuario.getId(),usuario);
         return usuario;
     }
-    public Optional<Usuario>findByEmail(String email){return Optional.ofNullable(usuarios.get(email));}
+    public Optional<Usuario> findByEmail(String email) {
+        return usuarios.values().stream()
+                .filter(u -> u.getEmail().equalsIgnoreCase(email))
+                .findFirst();
+    }
+
     public void delete(int id){
         usuarios.remove(id);
     }
 
-    public Optional<Map.Entry<Integer, Usuario>> findByNombreUsuario(String value) {
-        return usuarios.entrySet()
-                .stream()
-                .filter(entry -> entry.getValue().getNombre().equals(value))
+
+    public Optional<Usuario> findByNombreUsuario(String nombre) {
+        return usuarios.values().stream()
+                .filter(u -> u.getNombre().equals(nombre))
                 .findFirst();
     }
+
+    public Optional<List<Usuario>> findByRol(Rol rol) {
+        List<Usuario> usuariosConRol = usuarios.values().stream()
+                .filter(usuario -> usuario.getRol() == rol)
+                .collect(Collectors.toList());
+
+        if (usuariosConRol.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(usuariosConRol);
+        }
+    }
+
 
 }

@@ -11,6 +11,7 @@ public class UsuarioMapper {
         dto.setEmail(u.getEmail());
         dto.setEdad(u.getEdad());
         dto.setContrasenha((u.getContrasenha()));
+        dto.setRol(u.getRol());
         return dto;
     }
     public static Usuario toEntity(UsuarioDto dto){
@@ -20,6 +21,7 @@ public class UsuarioMapper {
         usuario.setEmail(dto.getEmail());
         usuario.setEdad(dto.getEdad());
         usuario.setContrasenha((dto.getContrasenha()));
+        usuario.setRol(dto.getRol());
         return usuario;
     }
 }

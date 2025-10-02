@@ -1,5 +1,7 @@
 package com.example.demo.entity;
 
+import com.example.demo.Enum.Rol;
+
 public class Usuario {
     private Integer id;
     private String nombre;
@@ -7,18 +9,26 @@ public class Usuario {
     private String email;
     private int edad;
     private String contrasenha;
+    private Rol rol;
 
     public Usuario(){}
-    public Usuario(int id, String nombre, String telefono, String email, int edad, String contrasenha) {
+    public Usuario(int id, String nombre, String telefono, String email, int edad, String contrasenha,Rol rol) {
         this.id = id;
         this.nombre = nombre;
         this.telefono = telefono;
         this.email = email;
         this.edad = edad;
         this.contrasenha=contrasenha;
+        this.rol=rol;
     }
 
+    public Rol getRol() {
+        return rol;
+    }
 
+    public void setRol(Rol rol) {
+        this.rol = rol;
+    }
     public String getNombre() {
         return nombre;
     }

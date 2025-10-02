@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.Enum.Rol;
 import com.example.demo.entity.Usuario;
 import com.example.demo.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
@@ -23,20 +24,20 @@ public class UsuarioService {
     public List<Usuario> listarUsuarioServive(){
         return repository.findAll();
     }
-    public Optional<Usuario> obtenerUsuarioPorId(Integer id) {
+    public Optional<Usuario> findById(Integer id) {
         return repository.findById(id);
     }
+    public Optional<List<Usuario>> findByRol(Rol rol){return repository.findByRol(rol);}
     public Usuario crearUsuario(Usuario usuario) {
-        Optional<Map.Entry<Integer, Usuario>> entryOpt = repository.findByNombreUsuario(usuario.getNombre());
+        Optional<Usuario> existente = repository.findByNombreUsuario(usuario.getNombre());
 
-        if (entryOpt.isPresent()) {
-            // Si ya existe un usuario con ese nombre, lanzamos excepción
-            throw new IllegalArgumentException("El usuario ya existe");
+        if (existente.isPresent()) {
+            throw new IllegalArgumentException("El usuario ya existe con ese nombre");
         }
 
-        // Si no existe, guardamos el nuevo usuario
         return repository.save(usuario);
     }
+
 
     public void eliminarUsuario(Integer id){
         repository.delete(id);
@@ -101,9 +102,11 @@ public class UsuarioService {
         }
         return usuario;
     }
-    public Optional<Usuario> findByNombre(String nombre){
-        return repository.findByNombreUsuario(nombre).map(Map.Entry::getValue);
+    public Optional<Usuario> findByNombre(String nombre) {
+        return repository.findByNombreUsuario(nombre);
     }
+
+
     public Optional<Usuario> findByEmail(String email){
         return repository.findByEmail(email);
     }
