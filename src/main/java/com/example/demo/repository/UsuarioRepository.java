@@ -25,12 +25,11 @@ public class UsuarioRepository {
         usuarios.remove(id);
     }
 
-    public Map.Entry<Integer, Usuario> findByNombreUsuario(String value){
-        for(Map.Entry<Integer,Usuario>entry :usuarios.entrySet()){
-            if(entry.getValue().getNombre().equals(value)){
-                return entry;
-            }
-        }return null;
+    public Optional<Map.Entry<Integer, Usuario>> findByNombreUsuario(String value) {
+        return usuarios.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().getNombre().equals(value))
+                .findFirst();
     }
 
 }

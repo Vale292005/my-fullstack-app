@@ -26,13 +26,18 @@ public class UsuarioService {
     public Optional<Usuario> obtenerUsuarioPorId(Integer id) {
         return repository.findById(id);
     }
-    public Usuario crearUsuario(Usuario usuario){
-        Map.Entry<Integer,Usuario>entry=repository.findByNombreUsuario(usuario.getNombre());
-        Optional<Usuario> existente= repository.findById(entry.getKey());
-        if(existente.isPresent()){
+    public Usuario crearUsuario(Usuario usuario) {
+        Optional<Map.Entry<Integer, Usuario>> entryOpt = repository.findByNombreUsuario(usuario.getNombre());
+
+        if (entryOpt.isPresent()) {
+            // Si ya existe un usuario con ese nombre, lanzamos excepción
             throw new IllegalArgumentException("El usuario ya existe");
-        }return repository.save(usuario);
+        }
+
+        // Si no existe, guardamos el nuevo usuario
+        return repository.save(usuario);
     }
+
     public void eliminarUsuario(Integer id){
         repository.delete(id);
     }
@@ -96,6 +101,11 @@ public class UsuarioService {
         }
         return usuario;
     }
-
+    public Optional<Usuario> findByNombre(String nombre){
+        return repository.findByNombreUsuario(nombre).map(Map.Entry::getValue);
+    }
+    public Optional<Usuario> findByEmail(String email){
+        return repository.findByEmail(email);
+    }
 
 }
