@@ -5,11 +5,12 @@ import com.example.demo.entity.Usuario;
 import com.example.demo.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
-
+@Service
 public class UsuarioService {
     private final UsuarioRepository repository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -27,6 +28,7 @@ public class UsuarioService {
     public Optional<Usuario> findById(Integer id) {
         return repository.findById(id);
     }
+
     public List<Usuario> findByRol(Rol rol){return repository.findByRol(rol);}
     public Usuario crearUsuario(Usuario usuario) {
         Optional<Usuario> existente = repository.findByNombreUsuario(usuario.getNombre());

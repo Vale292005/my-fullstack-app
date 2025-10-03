@@ -1,7 +1,9 @@
 package com.example.demo.entity;
 
 import com.example.demo.Enum.Rol;
+import jakarta.persistence.Entity;
 
+@Entity
 public class Usuario {
     private Integer id;
     private String nombre;

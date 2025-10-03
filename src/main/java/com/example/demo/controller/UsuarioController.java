@@ -5,6 +5,7 @@ import com.example.demo.dto.*;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.service.UsuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/usuarios")
 public class UsuarioController {
     private final UsuarioService service;
-
+    @Autowired
     public UsuarioController(UsuarioService service) {
         this.service = service;
     }
@@ -81,20 +82,21 @@ public class UsuarioController {
         return ResponseEntity.ok(service.findByEmail(email));
     }
     @GetMapping("/roles")
-    public ResponseEntity<?> listByRol(@RequestParam("rol") Rol rol){
-        Optional<List<Usuario>> usuariosOpt = service.findByRol(rol);
+    public ResponseEntity<?> listByRol(@RequestParam("rol") Rol rol) {
+        List<Usuario> usuarios = service.findByRol(rol);  // devuelve List<Usuario>
 
-        if (usuariosOpt.isEmpty()) {
+        if (usuarios.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("No se encontraron usuarios con el rol " + rol);
         }
 
-        List<UsuarioDto> dtos = usuariosOpt.get().stream()
-                .map(UsuarioMapper::toDto)
+        List<UsuarioDto> dtos = usuarios.stream()
+                .map(UsuarioMapper::toDto)  // convertimos a DTO
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
     }
+
 
 
 }
