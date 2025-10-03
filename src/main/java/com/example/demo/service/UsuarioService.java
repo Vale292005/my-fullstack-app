@@ -27,7 +27,7 @@ public class UsuarioService {
     public Optional<Usuario> findById(Integer id) {
         return repository.findById(id);
     }
-    public Optional<List<Usuario>> findByRol(Rol rol){return repository.findByRol(rol);}
+    public List<Usuario> findByRol(Rol rol){return repository.findByRol(rol);}
     public Usuario crearUsuario(Usuario usuario) {
         Optional<Usuario> existente = repository.findByNombreUsuario(usuario.getNombre());
 
