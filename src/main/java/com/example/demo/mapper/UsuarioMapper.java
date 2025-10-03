@@ -2,26 +2,21 @@ package com.example.demo.mapper;
 
 import com.example.demo.dto.UsuarioDto;
 import com.example.demo.entity.Usuario;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
-public class UsuarioMapper {
-    public static UsuarioDto toDto(Usuario u){
-        UsuarioDto dto=new UsuarioDto();
-        dto.setNombre(u.getNombre());
-        dto.setTelefono(u.getTelefono());
-        dto.setEmail(u.getEmail());
-        dto.setEdad(u.getEdad());
-        dto.setContrasenha((u.getContrasenha()));
-        dto.setRol(u.getRol());
-        return dto;
-    }
-    public static Usuario toEntity(UsuarioDto dto){
-        Usuario usuario=new Usuario();
-        usuario.setNombre(dto.getNombre());
-        usuario.setTelefono(dto.getTelefono());
-        usuario.setEmail(dto.getEmail());
-        usuario.setEdad(dto.getEdad());
-        usuario.setContrasenha((dto.getContrasenha()));
-        usuario.setRol(dto.getRol());
-        return usuario;
-    }
+@Mapper(componentModel = "spring")
+public interface UsuarioMapper {
+
+    UsuarioMapper INSTANCE = Mappers.getMapper(UsuarioMapper.class);
+
+    // Entidad → DTO (ignora la contraseña)
+    @Mapping(target = "rol", source = "rol")
+    UsuarioDto toDto(Usuario usuario);
+
+    // DTO → Entidad (deja la contraseña como null)
+    @Mapping(target = "contrasenha", ignore = true)
+    Usuario toEntity(UsuarioDto dto);
 }
+

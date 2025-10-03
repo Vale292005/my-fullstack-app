@@ -1,55 +1,68 @@
 package com.example.demo.service;
 
 import com.example.demo.Enum.Rol;
+import com.example.demo.dto.UsuarioDto;
 import com.example.demo.entity.Usuario;
+import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.*;
+
 @Service
+@RequiredArgsConstructor
 public class UsuarioService {
+
     private final UsuarioRepository repository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    private Map<String, String> tokensPorEmail = new HashMap<>();
+    private final UsuarioMapper usuarioMapper;
 
-    public UsuarioService(UsuarioRepository repository,BCryptPasswordEncoder passwordEncoder,EmailService emailService) {
-        this.repository = repository;
-        this.passwordEncoder=passwordEncoder;
-        this.emailService=emailService;
-    }
-    public List<Usuario> listarUsuarioServive(){
-        return repository.findAll();
-    }
-    public Optional<Usuario> findById(Integer id) {
-        return repository.findById(id);
+    private final Map<String, String> tokensPorEmail = new HashMap<>();
+
+    // Listar todos los usuarios en formato DTO
+    public List<UsuarioDto> listarUsuarios() {
+        return repository.findAll()
+                .stream()
+                .map(usuarioMapper::toDto)
+                .toList();
     }
 
-    public List<Usuario> findByRol(Rol rol){return repository.findByRol(rol);}
+    // Buscar usuario por ID
+    public UsuarioDto findById(Integer id) {
+        Usuario user = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        return usuarioMapper.toDto(user);
+    }
+
+    // Buscar por rol
+    public List<Usuario> findByRol(Rol rol) {
+        return repository.findByRol(rol);
+    }
+
+    // Crear usuario nuevo
     public Usuario crearUsuario(Usuario usuario) {
-        Optional<Usuario> existente = repository.findByNombreUsuario(usuario.getNombre());
-
-        if (existente.isPresent()) {
+        if (repository.findByNombre(usuario.getNombre()).isPresent()) {
             throw new IllegalArgumentException("El usuario ya existe con ese nombre");
         }
-
+        usuario.setContrasenha(passwordEncoder.encode(usuario.getContrasenha()));
         return repository.save(usuario);
     }
 
-
-    public void eliminarUsuario(Integer id){
-        repository.delete(id);
+    // Eliminar usuario
+    public void eliminarUsuario(Integer id) {
+        repository.deleteById(id);
     }
+
+    // Enviar token de recuperación de contraseña
     public void enviarTokenRecuperacion(String email) {
-        Optional<Usuario> usuarioOpt = repository.findByEmail(email);
-        if (usuarioOpt.isEmpty()) {
-            throw new RuntimeException("Usuario no encontrado con ese correo");
-        }
-        Usuario usuario = usuarioOpt.get();
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo"));
+
         String token = UUID.randomUUID().toString();
         tokensPorEmail.put(email, token);
 
@@ -60,57 +73,54 @@ public class UsuarioService {
         );
     }
 
+    // Restablecer contraseña con token
     public void restablecerPassword(String token, String nuevaContrasenha) {
-        String emailEncontrado = null;
-        for (Map.Entry<String, String> entry : tokensPorEmail.entrySet()) {
-            if (entry.getValue().equals(token)) {
-                emailEncontrado = entry.getKey();
-                break;
-            }
-        }
+        String emailEncontrado = tokensPorEmail.entrySet().stream()
+                .filter(e -> e.getValue().equals(token))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
 
-        if (emailEncontrado == null) {
-            throw new RuntimeException("Token inválido");
-        }
-         Optional<Usuario>usuarioOpt=repository.findByEmail(emailEncontrado);
-        if(usuarioOpt.isEmpty()){
-            throw new RuntimeException("usuario no encontrado");
-        }
-        Usuario usuario=usuarioOpt.get();
-        usuario.setContrasenha(nuevaContrasenha);
+        Usuario usuario = repository.findByEmail(emailEncontrado)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setContrasenha(passwordEncoder.encode(nuevaContrasenha));
         repository.save(usuario);
         tokensPorEmail.remove(emailEncontrado);
     }
+
+    // Cambiar contraseña con validación
     public void cambiarPassword(String email, String currentPassword, String nuevaContrasenha) {
-        Optional<Usuario> usuarioOpt = repository.findByEmail(email);
-        if (usuarioOpt.isEmpty()) {
-            throw new RuntimeException("Usuario no encontrado");
-        }
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        Usuario usuario = usuarioOpt.get();
-
-        if (!usuario.getContrasenha().equals(currentPassword)) {
+        if (!passwordEncoder.matches(currentPassword, usuario.getContrasenha())) {
             throw new RuntimeException("Contraseña actual incorrecta");
         }
 
-        usuario.setContrasenha(nuevaContrasenha);
+        usuario.setContrasenha(passwordEncoder.encode(nuevaContrasenha));
         repository.save(usuario);
     }
-    public Usuario login(String email,String contrasenha){
+
+    // Login
+    public Usuario login(String email, String contrasenha) {
         Usuario usuario = repository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        if(!passwordEncoder.matches(contrasenha,usuario.getContrasenha())){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"contraseña incorrecta");
+
+        if (!passwordEncoder.matches(contrasenha, usuario.getContrasenha())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Contraseña incorrecta");
         }
         return usuario;
     }
+
+    // Buscar por nombre
     public Optional<Usuario> findByNombre(String nombre) {
-        return repository.findByNombreUsuario(nombre);
+        return repository.findByNombre(nombre);
     }
 
-
-    public Optional<Usuario> findByEmail(String email){
+    // Buscar por email
+    public Optional<Usuario> findByEmail(String email) {
         return repository.findByEmail(email);
     }
-
 }
+
