@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "usuarios") // Nombre de la tabla
 @AllArgsConstructor
@@ -34,5 +37,8 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING) // Guarda el enum como texto
     private Rol rol;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Habitacion> hoteles = new ArrayList<>();
 }
 
