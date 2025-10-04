@@ -18,12 +18,14 @@ public class HotelService {
     private final HotelRepository hotelRepository;
     private final UsuarioRepository usuarioRepository;
     private final HotelMapper hotelMapper;
-    public HotelDto crearHotel(Integer usuarioId, Hotel hotel){
+    public HotelDto crearHotel(Integer usuarioId, HotelDto dto){
         Usuario usuario=usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("usuario no encontrado"));
+        Hotel hotel=hotelMapper.toEntity(dto);
         hotel.setUsuario(usuario);
-        Hotel creado=hotelRepository.save(hotel);
-        return hotelMapper.toDto(creado);
+        Hotel guardado=hotelRepository.save(hotel);
+
+        return hotelMapper.toDto(guardado);
     }
     public List<HotelDto>listarHoteles(){
         return hotelRepository.findAll()
