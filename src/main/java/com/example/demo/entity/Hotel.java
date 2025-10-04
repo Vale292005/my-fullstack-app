@@ -6,22 +6,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="Habitaciones")
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class Habitacion {
-
+@NoArgsConstructor
+@Table(name="Hoteles")
+public class Hotel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String nombreHotel;
+    private String nombre;
     private String direccion;
-    private int mangos;
-
     @ManyToOne
-    @JoinColumn(name="hotel_id",nullable = false)
-    private Hotel hotel;
-
+    @JoinColumn(name="usuario_id",nullable = false)
+    private Usuario usuario;
 }

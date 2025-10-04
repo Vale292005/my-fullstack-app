@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.Enum.Rol;
-import com.example.demo.dto.*;
+import com.example.demo.dto.usuariodto.*;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.service.UsuarioService;
@@ -12,7 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController

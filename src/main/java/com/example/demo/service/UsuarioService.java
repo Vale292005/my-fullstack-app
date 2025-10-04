@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.Enum.Rol;
-import com.example.demo.dto.UsuarioDto;
+import com.example.demo.dto.usuariodto.UsuarioDto;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.repository.UsuarioRepository;

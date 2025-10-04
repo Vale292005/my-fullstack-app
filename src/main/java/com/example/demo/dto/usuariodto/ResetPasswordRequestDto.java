@@ -1,4 +1,4 @@
-package com.example.demo.dto;
+package com.example.demo.dto.usuariodto;
 
 public class ResetPasswordRequestDto {
     private String email;
