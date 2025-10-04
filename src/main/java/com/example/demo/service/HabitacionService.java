@@ -2,9 +2,11 @@ package com.example.demo.service;
 
 import com.example.demo.dto.HabitacionDto;
 import com.example.demo.entity.Habitacion;
+import com.example.demo.entity.Hotel;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.HabitacionMapper;
 import com.example.demo.repository.HabitacionRepository;
+import com.example.demo.repository.HotelRepository;
 import com.example.demo.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,15 +19,15 @@ import java.util.stream.Collectors;
 public class HabitacionService {
 
     private final HabitacionRepository habitacionRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final HotelRepository hotelRepository;
     private final HabitacionMapper habitacionMapper;
 
     // Crear habitación
     public HabitacionDto crearHabitacion(Integer usuarioId, HabitacionDto dto) {
         Habitacion habitacion = habitacionMapper.toEntity(dto);
-        Usuario usuario = usuarioRepository.findById(usuarioId)
+        Hotel hotel = hotelRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        habitacion.setUsuario(usuario);
+        habitacion.setHotel(hotel);
         Habitacion creado = habitacionRepository.save(habitacion);
         return habitacionMapper.toDto(creado);
     }
@@ -60,7 +62,7 @@ public class HabitacionService {
 
         Habitacion habitacionActualizada = habitacionMapper.toEntity(dto);
         habitacionActualizada.setId(habitacion.getId()); // aseguramos que se actualiza la misma
-        habitacionActualizada.setUsuario(habitacion.getUsuario()); // mantenemos la relación con el usuario
+        habitacionActualizada.setHotel(habitacion.getHotel()); // mantenemos la relación con el usuario
 
         Habitacion guardada = habitacionRepository.save(habitacionActualizada);
         return habitacionMapper.toDto(guardada);
