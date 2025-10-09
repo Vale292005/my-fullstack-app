@@ -23,5 +23,6 @@ public class Habitacion {
     @ManyToOne
     @JoinColumn(name="hotel_id",nullable = false)
     private Hotel hotel;
+    private double precio;
 
 }

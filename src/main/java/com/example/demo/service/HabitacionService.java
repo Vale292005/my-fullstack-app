@@ -3,77 +3,71 @@ package com.example.demo.service;
 import com.example.demo.dto.HabitacionDto;
 import com.example.demo.entity.Habitacion;
 import com.example.demo.entity.Hotel;
-import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.HabitacionMapper;
 import com.example.demo.repository.HabitacionRepository;
 import com.example.demo.repository.HotelRepository;
-import com.example.demo.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class HabitacionService {
 
     private final HabitacionRepository habitacionRepository;
     private final HotelRepository hotelRepository;
-    private final HabitacionMapper habitacionMapper;
+    private final HabitacionMapper mapper;
+
+    public HabitacionService(HabitacionRepository habitacionRepository,
+                             HotelRepository hotelRepository,
+                             HabitacionMapper mapper) {
+        this.habitacionRepository = habitacionRepository;
+        this.hotelRepository = hotelRepository;
+        this.mapper = mapper;
+    }
+
+    // Listar habitaciones de un hotel
+    public List<HabitacionDto> listarHabitacionesPorHotel(Long hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel no encontrado"));
+
+        return habitacionRepository.findByHotel(hotel).stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
 
     // Crear habitación
-    public HabitacionDto crearHabitacion(Integer usuarioId, HabitacionDto dto) {
-        Habitacion habitacion = habitacionMapper.toEntity(dto);
-        Hotel hotel = hotelRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    public HabitacionDto crearHabitacion(HabitacionDto dto) {
+        Hotel hotel = hotelRepository.findById(dto.hotelId())
+                .orElseThrow(() -> new RuntimeException("Hotel no encontrado"));
+
+        Habitacion habitacion = mapper.toEntity(dto);
         habitacion.setHotel(hotel);
-        Habitacion creado = habitacionRepository.save(habitacion);
-        return habitacionMapper.toDto(creado);
+
+        Habitacion guardada = habitacionRepository.save(habitacion);
+        return mapper.toDto(guardada);
     }
 
-    // Listar TODAS las habitaciones
-    public List<HabitacionDto> listarHabitaciones() {
-        return habitacionRepository.findAll()
-                .stream()
-                .map(habitacionMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    // Listar habitaciones por usuario
-    public List<HabitacionDto> listarHabitacionesPorUsuario(Integer usuarioId) {
-        return habitacionRepository.findByUsuario_Id(usuarioId)
-                .stream()
-                .map(habitacionMapper::toDto)
-                .collect(Collectors.toList());
-    }
-
-    // Buscar habitación por ID
-    public HabitacionDto buscarPorId(Integer habitacionId) {
-        Habitacion habitacion = habitacionRepository.findById(habitacionId)
-                .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
-        return habitacionMapper.toDto(habitacion);
-    }
-
-    // Actualizar habitación
-    public HabitacionDto actualizarHabitacion(Integer habitacionId, HabitacionDto dto) {
-        Habitacion habitacion = habitacionRepository.findById(habitacionId)
+    // Editar habitación
+    public HabitacionDto editarHabitacion(Long id, HabitacionDto dto) {
+        Habitacion habitacion = habitacionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
 
-        Habitacion habitacionActualizada = habitacionMapper.toEntity(dto);
-        habitacionActualizada.setId(habitacion.getId()); // aseguramos que se actualiza la misma
-        habitacionActualizada.setHotel(habitacion.getHotel()); // mantenemos la relación con el usuario
+        habitacion.setNombreHotel(dto.nombreHotel());
+        habitacion.setDireccion(dto.direccion());
+        habitacion.setMangos(dto.mangos());
+        habitacion.setPrecio(dto.precio());
 
-        Habitacion guardada = habitacionRepository.save(habitacionActualizada);
-        return habitacionMapper.toDto(guardada);
+        Habitacion actualizada = habitacionRepository.save(habitacion);
+        return mapper.toDto(actualizada);
     }
 
     // Eliminar habitación
-    public void eliminarHabitacion(Integer habitacionId) {
-        if (!habitacionRepository.existsById(habitacionId)) {
-            throw new RuntimeException("Habitación no encontrada");
-        }
-        habitacionRepository.deleteById(habitacionId);
+    public void eliminarHabitacion(Long id) {
+        Habitacion habitacion = habitacionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
+        habitacionRepository.delete(habitacion);
     }
 }
+
 

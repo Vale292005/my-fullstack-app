@@ -44,7 +44,7 @@ public class HotelController {
         return ResponseEntity.ok("Hotel actualizado correctamente");
     }
 
-    // 🔴 DELETE /hotels/{id} — Eliminar hotel (solo anfitrión o admin)
+    //  DELETE /hotels/{id} — Eliminar hotel (solo anfitrión o admin)
     @PreAuthorize("hasAnyRole('ANFITRION','ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> eliminarHotel(@PathVariable Long id) {
