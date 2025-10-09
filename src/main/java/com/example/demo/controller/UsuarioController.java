@@ -6,6 +6,7 @@ import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
 import com.example.demo.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,13 +38,6 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDto(creado));
     }
 
-    // Login
-//    @PostMapping("/login")
-//    public ResponseEntity<UsuarioDto> login(@RequestBody LoginRequestDto loginRequest) {
-//        Usuario usuario = service.login(loginRequest.getEmail(), loginRequest.getContrsenha());
-//        return ResponseEntity.ok(usuarioMapper.toDto(usuario)); // ✅
-//    }
-
     // Registro
     @PostMapping("/registro")
     public ResponseEntity<?> registrar(@RequestBody UsuarioDto usuarioDto) {
@@ -64,12 +58,6 @@ public class UsuarioController {
         return ResponseEntity.ok("Correo enviado");
     }
 
-    // Restablecer contraseña
-    @PostMapping("/restablecer-password")
-    public ResponseEntity<String> restablecerPassword(@RequestBody ResetPassword dto) {
-        service.restablecerPassword(dto.getToken(), dto.getNewPassword());
-        return ResponseEntity.ok("Contraseña actualizada");
-    }
 
     // Cambiar contraseña
     @PostMapping("/cambiar-contrasenha")
@@ -124,4 +112,40 @@ public class UsuarioController {
 
         return ResponseEntity.ok(new ResponseDTO<>(false, dtos));
     }
+    //ver perfil
+    @GetMapping("/me")
+    public ResponseEntity<?> getPerfilUsuario(Authentication authentication) {
+        String email = authentication.getName(); // email desde el token
+        UsuarioDto perfil = service.obtenerPerfil(email);
+        return ResponseEntity.ok(perfil);
+    }
+
+    //eliminarse
+    @DeleteMapping("/me")
+    public ResponseEntity<?> eliminarMiCuenta(Authentication authentication) {
+        String email = authentication.getName();
+        service.eliminarCuenta(email);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+
+    //permisos administrador
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<?> listarUsuarios() {
+        return ResponseEntity.ok(service.listarUsuarios());
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarUsuario(@PathVariable int id) {
+        service.eliminarUsuario(id);
+        return ResponseEntity.ok("Usuario eliminado correctamente");
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editarUsuario(@PathVariable int id, @RequestBody UsuarioDto dto) {
+        service.actualizarUsuario(id, dto);
+        return ResponseEntity.ok("Usuario actualizado correctamente");
+    }
+
 }

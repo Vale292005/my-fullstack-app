@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.Enum.Rol;
+import com.example.demo.config.JwtUtil;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
 import com.example.demo.entity.Usuario;
@@ -26,7 +27,10 @@ public class UsuarioService {
     private final EmailService emailService;
     private final UsuarioMapper usuarioMapper;
 
+    private final JwtUtil jwtUtil;
     private final Map<String, String> tokensPorEmail = new HashMap<>();
+    private final Set<String> tokensInvalidos = new HashSet<>();
+
 
     // Listar todos los usuarios en formato DTO
     public List<UsuarioDto> listarUsuarios() {
@@ -84,21 +88,6 @@ public class UsuarioService {
         );
     }
 
-    // Restablecer contraseña con token
-    public void restablecerPassword(String token, String nuevaContrasenha) {
-        String emailEncontrado = tokensPorEmail.entrySet().stream()
-                .filter(e -> e.getValue().equals(token))
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
-
-        Usuario usuario = repository.findByEmail(emailEncontrado)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        usuario.setContrasenha(passwordEncoder.encode(nuevaContrasenha));
-        repository.save(usuario);
-        tokensPorEmail.remove(emailEncontrado);
-    }
 
     // Cambiar contraseña con validación
     public void cambiarPassword(String email, String currentPassword, String nuevaContrasenha) {
@@ -113,7 +102,7 @@ public class UsuarioService {
         repository.save(usuario);
     }
 
-    // Login
+    // Login valida token de ingreso
 
     public String login(LoginRequestDto dto) {
         Usuario usuario = repository.findByEmail(dto.email())
@@ -127,8 +116,14 @@ public class UsuarioService {
             throw new RuntimeException("Credenciales inválidas");
         }
 
-        return jwtUtil.generarToken(usuario.getEmail(), usuario.getRol());
+        String token = jwtUtil.generarToken(usuario.getEmail(), usuario.getRol());
+        if (!esTokenValido(token)) {
+            throw new RuntimeException("Token inválido o expirado");
+        }
+
+        return token;
     }
+
 
     // Buscar por nombre
     public Optional<Usuario> findByNombre(String nombre) {
@@ -143,6 +138,98 @@ public class UsuarioService {
         LocalDate hoy = LocalDate.now();
         Period edad = Period.between(fechaNacimiento, hoy);
         return edad.getYears() >= 18;
+    }
+    public void invalidarToken(String token) {
+        tokensInvalidos.add(token);
+    }
+
+    public boolean esTokenValido(String token) {
+        return !tokensInvalidos.contains(token);
+    }
+    public boolean activarUsuarioPorToken(String token) {
+        String email = jwtUtil.obtenerEmail(token);
+        var usuario = repository.findByEmail(email).orElse(null);
+
+        if (usuario == null) return false;
+
+        if (!usuario.isActivo()) {
+            usuario.setActivo(true);
+            repository.save(usuario);
+            return true;
+        }
+
+        return false;
+    }
+    public boolean reenviarEnlaceConfirmacion(String email) {
+        var usuario = repository.findByEmail(email).orElse(null);
+
+        if (usuario == null) return false;
+        if (usuario.isActivo()) return false; // ya está activo, no hay nada que reenviar
+
+        // Generar un nuevo token de confirmación
+        String token = jwtUtil.generarToken(usuario.getEmail(), usuario.getRol());
+
+        // Enviar email con el enlace de confirmación
+        String enlace = "http://localhost:8080/auth/confirmar?token=" + token;//CAMBIAR!!!!!!!!!!!!No olvidarse
+        emailService.enviarCorreo(email, "Confirma tu cuenta",
+                "Haz clic en el siguiente enlace para activar tu cuenta:\n" + enlace);
+
+        return true;
+    }
+    public boolean iniciarRecuperacionPassword(String email) {
+        var usuario = repository.findByEmail(email).orElse(null);
+        if (usuario == null) return false;
+
+        // Generar token temporal solo para reset password
+        String token = jwtUtil.generarToken(usuario.getEmail(),usuario.getRol());
+
+        String enlace = "http://localhost:8080/auth/reset-password?token=" + token;
+        emailService.enviarCorreo(
+                email,
+                "Recuperación de contraseña",
+                "Haz clic en este enlace para restablecer tu contraseña:\n" + enlace
+        );
+
+        return true;
+    }
+
+    public void restablecerPassword(String token, String nuevaPassword) {
+        // Obtener el email desde el token
+        String email = jwtUtil.obtenerEmail(token);
+
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setContrasenha(passwordEncoder.encode(nuevaPassword));
+        repository.save(usuario);
+
+        // Invalida el token si manejas blacklist
+        tokensInvalidos.add(token);
+    }
+
+    public UsuarioDto obtenerPerfil(String email) {
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return usuarioMapper.toDto(usuario);
+    }
+
+    public void eliminarCuenta(String email) {
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        repository.delete(usuario);
+    }
+    public void actualizarUsuario(int id, UsuarioDto dto) {
+        Usuario usuario = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setNombre(dto.nombre());
+        usuario.setTelefono(dto.telefono());
+        usuario.setEmail(dto.email());
+        usuario.setEdad(dto.edad());
+        usuario.setRol(dto.rol());
+        usuario.setActivo(dto.activo());
+
+        repository.save(usuario);
     }
 
 }
