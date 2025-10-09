@@ -2,11 +2,13 @@ package com.example.demo.repository;
 
 import com.example.demo.entity.Hotel;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
-public interface HotelRepository extends JpaRepository<Hotel,Long> {
-    List<Hotel> findByUsuario_Id(Integer usuarioId);
+
+public interface HotelRepository extends JpaRepository<Hotel, Long> {
+
+    List<Hotel> findByCiudadContainingIgnoreCase(String ciudad);
+    List<Hotel> findByNombreContainingIgnoreCase(String nombre);
+    List<Hotel> findByCiudadContainingIgnoreCaseAndNombreContainingIgnoreCase(String ciudad, String nombre);
 }

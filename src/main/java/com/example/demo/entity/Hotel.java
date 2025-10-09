@@ -16,6 +16,7 @@ public class Hotel {
     private Long id;
     private String nombre;
     private String direccion;
+    private String descripcion;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="usuario_id",nullable = false)
     private Usuario usuario;

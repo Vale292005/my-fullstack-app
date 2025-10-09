@@ -2,46 +2,69 @@ package com.example.demo.service;
 
 import com.example.demo.dto.HotelDto;
 import com.example.demo.entity.Hotel;
-import com.example.demo.entity.Usuario;
-import com.example.demo.mapper.HotelMapper;
 import com.example.demo.repository.HotelRepository;
-import com.example.demo.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class HotelService {
-    private final HotelRepository hotelRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final HotelMapper hotelMapper;
-    public HotelDto crearHotel(Integer usuarioId, HotelDto dto){
-        Usuario usuario=usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("usuario no encontrado"));
-        Hotel hotel=hotelMapper.toEntity(dto);
-        hotel.setUsuario(usuario);
-        Hotel guardado=hotelRepository.save(hotel);
 
-        return hotelMapper.toDto(guardado);
+    private final HotelRepository hotelRepository;
+
+    public HotelService(HotelRepository hotelRepository) {
+        this.hotelRepository = hotelRepository;
     }
-    public List<HotelDto>listarHoteles(){
-        return hotelRepository.findAll()
-                .stream()
-                .map(hotelMapper::toDto)
+
+    public List<HotelDto> buscarHoteles(String ciudad, String nombre) {
+        List<Hotel> hoteles;
+
+        if (ciudad != null && nombre != null) {
+            hoteles = hotelRepository.findByCiudadContainingIgnoreCaseAndNombreContainingIgnoreCase(ciudad, nombre);
+        } else if (ciudad != null) {
+            hoteles = hotelRepository.findByCiudadContainingIgnoreCase(ciudad);
+        } else if (nombre != null) {
+            hoteles = hotelRepository.findByNombreContainingIgnoreCase(nombre);
+        } else {
+            hoteles = hotelRepository.findAll();
+        }
+
+        return hoteles.stream()
+                .map(h -> new HotelDto(
+                        h.getId(),
+                        h.getNombre(),
+                        h.getDireccion(),
+                        h.getDescripcion(),
+                        h.getUsuario()
+                ))
                 .collect(Collectors.toList());
+
     }
-    public List<HotelDto>listarHotelPorUsuario(Integer usuarioId){
-        return hotelRepository.findByUsuario_Id(usuarioId)
-                .stream()
-                .map(hotelMapper::toDto)
-                .collect(Collectors.toList());
+
+    public void crearHotel(HotelDto dto) {
+        Hotel hotel = new Hotel();
+        hotel.setNombre(dto.nombre());
+        hotel.setDireccion(dto.direccion());
+        hotel.setDescripcion(dto.descripcion());
+        hotelRepository.save(hotel);
     }
-    public HotelDto buscarPorId(Long hotelId){
-        Hotel hotel=hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("no se encuentra hotel por la id"));
-        return hotelMapper.toDto(hotel);
+
+    public void editarHotel(Long id, HotelDto dto) {
+        Hotel hotel = hotelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hotel no encontrado"));
+        hotel.setNombre(dto.nombre());
+        hotel.setDireccion(dto.direccion());
+        hotel.setDescripcion(dto.descripcion());
+        hotelRepository.save(hotel);
+    }
+
+    public void eliminarHotel(Long id) {
+        if (!hotelRepository.existsById(id)) {
+            throw new RuntimeException("Hotel no encontrado");
+        }
+        hotelRepository.deleteById(id);
     }
 }
+
+

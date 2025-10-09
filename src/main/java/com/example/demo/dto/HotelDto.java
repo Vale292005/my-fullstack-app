@@ -6,6 +6,8 @@ public record HotelDto (
         Long id,
         String nombre,
         String direccion,
+        String descripcion,
         Usuario usuario
+
 ){
 }
