@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class Usuario {
     @Column(nullable = false, unique = true) // no se permiten emails repetidos
     private String email;
 
-    private int edad;
+    private LocalDate edad;
 
     @Column(nullable = false)
     private String contrasenha;
@@ -40,5 +41,7 @@ public class Usuario {
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Habitacion> hoteles = new ArrayList<>();
+    public boolean activo;
+
 }
 

@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.Enum.Rol;
+import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
@@ -8,9 +9,12 @@ import com.example.demo.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 
 @Service
@@ -18,7 +22,7 @@ import java.util.*;
 public class UsuarioService {
 
     private final UsuarioRepository repository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final UsuarioMapper usuarioMapper;
 
@@ -30,6 +34,13 @@ public class UsuarioService {
                 .stream()
                 .map(usuarioMapper::toDto)
                 .toList();
+    }
+    public void confirmarCuenta(String email) {
+        Usuario usuario = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setActivo(true);
+        repository.save(usuario);
     }
 
     // Buscar usuario por ID
@@ -103,14 +114,20 @@ public class UsuarioService {
     }
 
     // Login
-    public Usuario login(String email, String contrasenha) {
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
-        if (!passwordEncoder.matches(contrasenha, usuario.getContrasenha())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Contraseña incorrecta");
+    public String login(LoginRequestDto dto) {
+        Usuario usuario = repository.findByEmail(dto.email())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("Cuenta no confirmada");
         }
-        return usuario;
+
+        if (!passwordEncoder.matches(dto.password(), usuario.getContrasenha())) {
+            throw new RuntimeException("Credenciales inválidas");
+        }
+
+        return jwtUtil.generarToken(usuario.getEmail(), usuario.getRol());
     }
 
     // Buscar por nombre
@@ -122,5 +139,11 @@ public class UsuarioService {
     public Optional<Usuario> findByEmail(String email) {
         return repository.findByEmail(email);
     }
+    public boolean esMayorDeEdad(LocalDate fechaNacimiento) {
+        LocalDate hoy = LocalDate.now();
+        Period edad = Period.between(fechaNacimiento, hoy);
+        return edad.getYears() >= 18;
+    }
+
 }
 

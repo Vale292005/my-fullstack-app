@@ -38,11 +38,11 @@ public class UsuarioController {
     }
 
     // Login
-    @PostMapping("/login")
-    public ResponseEntity<UsuarioDto> login(@RequestBody LoginRequestDto loginRequest) {
-        Usuario usuario = service.login(loginRequest.getEmail(), loginRequest.getContrsenha());
-        return ResponseEntity.ok(usuarioMapper.toDto(usuario)); // ✅
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<UsuarioDto> login(@RequestBody LoginRequestDto loginRequest) {
+//        Usuario usuario = service.login(loginRequest.getEmail(), loginRequest.getContrsenha());
+//        return ResponseEntity.ok(usuarioMapper.toDto(usuario)); // ✅
+//    }
 
     // Registro
     @PostMapping("/registro")
