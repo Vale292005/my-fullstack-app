@@ -99,6 +99,39 @@ public class ReservaService {
                 ))
                 .collect(Collectors.toList());
     }
+    public void crearReservaAdmin(Long usuarioId, ReservaDto dto) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Habitacion habitacion = habitacionRepository.findById(dto.habitacionId())
+                .orElseThrow(() -> new RuntimeException("Habitación no encontrada"));
+
+        // Validaciones de fechas y edad si quieres aplicarlas también
+        if (usuario.getEdad().isAfter(LocalDate.now().minusYears(18))) {
+            throw new RuntimeException("El usuario debe ser mayor de edad");
+        }
+        if (!dto.fchEntrada().isBefore(dto.fchSalida())) {
+            throw new RuntimeException("La fecha de entrada debe ser antes de la de salida");
+        }
+
+        double precioTotal = habitacion.getMangos() * (dto.fchSalida().toEpochDay() - dto.fchEntrada().toEpochDay());
+
+        Reserva reserva = new Reserva();
+        reserva.setUsuario(usuario);
+        reserva.setHabitacion(habitacion);
+        reserva.setFchEntrada(dto.fchEntrada());
+        reserva.setFchSalida(dto.fchSalida());
+        reserva.setPrecioTotal(precioTotal);
+
+        reservaRepository.save(reserva);
+    }
+
+    // Eliminar reserva por admin
+    public void eliminarReserva(Long reservaId) {
+        Reserva reserva = reservaRepository.findById(reservaId)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+        reservaRepository.delete(reserva);
+    }
 }
 
 

@@ -4,12 +4,13 @@ import com.example.demo.Enum.Rol;
 import com.example.demo.config.JwtUtil;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
+import com.example.demo.entity.DocumentosHost;
 import com.example.demo.entity.Usuario;
 import com.example.demo.mapper.UsuarioMapper;
+import com.example.demo.repository.DocumentosRepository;
 import com.example.demo.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,6 +27,8 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final UsuarioMapper usuarioMapper;
+
+    private final DocumentosRepository documentosRepository;
 
     private final JwtUtil jwtUtil;
     private final Map<String, String> tokensPorEmail = new HashMap<>();
@@ -48,7 +51,7 @@ public class UsuarioService {
     }
 
     // Buscar usuario por ID
-    public UsuarioDto findById(Integer id) {
+    public UsuarioDto findById(Long id) {
         Usuario user = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         return usuarioMapper.toDto(user);
@@ -69,7 +72,7 @@ public class UsuarioService {
     }
 
     // Eliminar usuario
-    public void eliminarUsuario(Integer id) {
+    public void eliminarUsuario(Long id) {
         repository.deleteById(id);
     }
 
@@ -218,7 +221,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         repository.delete(usuario);
     }
-    public void actualizarUsuario(int id, UsuarioDto dto) {
+    public void actualizarUsuario(Long id, UsuarioDto dto) {
         Usuario usuario = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -230,6 +233,31 @@ public class UsuarioService {
         usuario.setActivo(dto.activo());
 
         repository.save(usuario);
+    }
+    public List<DocumentosHost> listarDocumentosPendientes() {
+        return documentosRepository.findByEstado("PENDIENTE");
+    }
+
+    public void aprobarSolicitud(Long userId) {
+        Usuario usuario = repository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        DocumentosHost docs = documentosRepository.findByUsuario(usuario)
+                .orElseThrow(() -> new RuntimeException("No hay documentos cargados"));
+        docs.setAprobado(true);
+        docs.setEstado("APROBADO");
+        usuario.setRol(Rol.ANFITRION);
+        repository.save(usuario);
+        documentosRepository.save(docs);
+    }
+
+    public void rechazarSolicitud(Long userId) {
+        Usuario usuario = repository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        DocumentosHost docs = documentosRepository.findByUsuario(usuario)
+                .orElseThrow(() -> new RuntimeException("No hay documentos cargados"));
+        docs.setAprobado(false);
+        docs.setEstado("RECHAZADO");
+        documentosRepository.save(docs);
     }
 
 }

@@ -7,6 +7,7 @@ import lombok.Data;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 @Repository
 public interface DocumentosRepository extends JpaRepository<DocumentosHost, Long> {
@@ -16,4 +17,6 @@ public interface DocumentosRepository extends JpaRepository<DocumentosHost, Long
 
     // Verificar si ya existen documentos para un usuario
     boolean existsByUsuario(Usuario usuario);
+
+    List<DocumentosHost> findByEstado(String estado);
 }

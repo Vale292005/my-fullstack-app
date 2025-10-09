@@ -137,13 +137,13 @@ public class UsuarioController {
     }
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarUsuario(@PathVariable int id) {
+    public ResponseEntity<?> eliminarUsuario(@PathVariable Long id) {
         service.eliminarUsuario(id);
         return ResponseEntity.ok("Usuario eliminado correctamente");
     }
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarUsuario(@PathVariable int id, @RequestBody UsuarioDto dto) {
+    public ResponseEntity<?> editarUsuario(@PathVariable Long id, @RequestBody UsuarioDto dto) {
         service.actualizarUsuario(id, dto);
         return ResponseEntity.ok("Usuario actualizado correctamente");
     }
