@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/anfitrion")
 @RequiredArgsConstructor
 public class DocumentosController {
-    private DocumentosService servicio;
+    private final DocumentosService servicio;
     @PreAuthorize("hasRole('ANFITRION')")
     @PostMapping("/documents/upload")
     public ResponseEntity<?> subirDocumentos(@RequestBody DocumentosHostDto documentos,

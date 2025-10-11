@@ -38,7 +38,7 @@ public class DocumentosService {
     }
 
     public void aprobarSolicitud(int userId) {
-        Usuario usuario = usuarioRepository.findById(userId)
+        Usuario usuario = usuarioRepository.findById((long) userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         DocumentosHost docs = documentosRepository.findByUsuario(usuario)
@@ -52,7 +52,7 @@ public class DocumentosService {
     }
 
     public void rechazarSolicitud(int userId, String observacion) {
-        Usuario usuario = usuarioRepository.findById(userId)
+        Usuario usuario = usuarioRepository.findById((long) userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         DocumentosHost docs = documentosRepository.findByUsuario(usuario)
