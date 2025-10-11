@@ -46,8 +46,18 @@ class HabitacionServiceTest {
         habitacion = new Habitacion();
         habitacion.setId(1L);
         habitacion.setNombreHotel("Habitación A");
+        habitacion.setDireccion("Calle Falsa 123");
+        habitacion.setMangos(2);
+        habitacion.setPrecio(100.0);
 
-        dto = new HabitacionDto(1L, "Habitación A", "Calle Falsa 123", 2, 1L, 1.002);
+        dto = new HabitacionDto(
+                1L,
+                "Habitación A",
+                "Calle Falsa 123",
+                2,1L,
+                100.0
+
+        );
     }
 
     @Test
@@ -98,4 +108,7 @@ class HabitacionServiceTest {
         verify(habitacionRepository).delete(habitacion);
     }
 }
+
+
+
 

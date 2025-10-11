@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
-public class UsuarioController {
+public class UsuarioControllerTest {
 
     private final UsuarioService service;
     private final UsuarioMapper usuarioMapper;
