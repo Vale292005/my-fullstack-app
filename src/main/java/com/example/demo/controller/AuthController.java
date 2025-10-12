@@ -108,8 +108,6 @@ public class AuthController {
             return ResponseEntity.internalServerError().body("Error al procesar la solicitud.");
         }
     }
-
-
 }
 
 

@@ -147,5 +147,4 @@ public class UsuarioController {
         service.actualizarUsuario(id, dto);
         return ResponseEntity.ok("Usuario actualizado correctamente");
     }
-
 }

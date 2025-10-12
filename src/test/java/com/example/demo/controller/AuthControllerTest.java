@@ -4,55 +4,54 @@ import com.example.demo.Enum.Rol;
 import com.example.demo.dto.usuariodto.AuthResponseDto;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
-import com.example.demo.entity.Usuario;
-import com.example.demo.mapper.LoginRequestMapper;
-import com.example.demo.mapper.UsuarioMapper;
-import com.example.demo.service.UsuarioService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test") // 👈 para usar TestSecurityConfig
+@Transactional
 class AuthControllerTest {
 
-    @Mock private UsuarioService usuarioService;
-    @Mock private UsuarioMapper usuarioMapper;
-    @Mock private LoginRequestMapper loginRequestMapper;
-
-    @InjectMocks
+    @Autowired
     private AuthController authController;
-
-    private UsuarioDto usuarioDto;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        usuarioDto = new UsuarioDto("Usuario", "test@example.com", "123", LocalDate.now().minusYears(20), Rol.CLIENTE,true);
-    }
 
     @Test
     void testRegister_MayorDeEdad() {
-        when(usuarioService.esMayorDeEdad(usuarioDto.edad())).thenReturn(true);
-        when(usuarioMapper.toEntity(usuarioDto)).thenReturn(new Usuario());
+        UsuarioDto usuarioDto = new UsuarioDto(
+                "Usuario",
+                "test@example.com",
+                "123",
+                LocalDate.now().minusYears(20),
+                Rol.CLIENTE,
+                true
+        );
 
         ResponseEntity<?> response = authController.register(usuarioDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(usuarioService).crearUsuario(any(Usuario.class));
     }
 
     @Test
     void testRegister_MenorDeEdad() {
-        when(usuarioService.esMayorDeEdad(usuarioDto.edad())).thenReturn(false);
+        UsuarioDto menor = new UsuarioDto(
+                "UsuarioMenor",
+                "menor@example.com",
+                "123",
+                LocalDate.now().minusYears(10),
+                Rol.CLIENTE,
+                true
+        );
 
-        ResponseEntity<?> response = authController.register(usuarioDto);
+        ResponseEntity<?> response = authController.register(menor);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Debe ser mayor de edad", response.getBody());
@@ -60,14 +59,24 @@ class AuthControllerTest {
 
     @Test
     void testLogin_Exitoso() {
-        LoginRequestDto dto = new LoginRequestDto("test@example.com", "password");
-        when(usuarioService.login(dto)).thenReturn("jwt-token");
+        // Registrar un usuario antes de loguear
+        UsuarioDto usuarioDto = new UsuarioDto(
+                "UsuarioLogin",
+                "login@example.com",
+                "123",
+                LocalDate.now().minusYears(25),
+                Rol.CLIENTE,
+                true
+        );
+        authController.register(usuarioDto);
 
-        ResponseEntity<?> response = authController.login(dto);
+        LoginRequestDto loginDto = new LoginRequestDto("login@example.com", "123");
+        ResponseEntity<?> response = authController.login(loginDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        AuthResponseDto body = (AuthResponseDto) response.getBody();
-        assertEquals("jwt-token", body.token());
+        assertTrue(response.getBody() instanceof AuthResponseDto);
+        AuthResponseDto authResponse = (AuthResponseDto) response.getBody();
+        assertNotNull(authResponse.token());
     }
 
     @Test
@@ -83,3 +92,6 @@ class AuthControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 }
+
+
+

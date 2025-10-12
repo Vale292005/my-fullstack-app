@@ -21,10 +21,10 @@ public class HotelController {
     // 🟢 GET /hotels — Buscar hoteles
     @GetMapping
     public ResponseEntity<List<HotelDto>> listarHoteles(
-            @RequestParam(required = false) String ciudad,
+            @RequestParam(required = false) String direccion,
             @RequestParam(required = false) String nombre
     ) {
-        List<HotelDto> hoteles = hotelService.buscarHoteles(ciudad, nombre);
+        List<HotelDto> hoteles = hotelService.buscarHoteles(direccion, nombre);
         return ResponseEntity.ok(hoteles);
     }
 
