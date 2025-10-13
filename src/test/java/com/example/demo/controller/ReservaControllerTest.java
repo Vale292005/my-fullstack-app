@@ -1,80 +1,93 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ReservaDto;
-import com.example.demo.service.ReservaService;
+import com.example.demo.entity.Usuario;
+import com.example.demo.repository.ReservaRepository;
+import com.example.demo.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class ReservaControllerTest {
 
-    private ReservaService reservaService;
-    private ReservaController reservaController;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ReservaRepository reservaRepository;
+
+    private Long usuarioId;
 
     @BeforeEach
-    void setUp() {
-        reservaService = mock(ReservaService.class);
-        reservaController = new ReservaController(reservaService);
+    void setUp() throws Exception {
+        reservaRepository.deleteAll();
+        usuarioRepository.deleteAll();
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Usuario Test");
+        usuario = usuarioRepository.save(usuario);
+        usuarioId = usuario.getId();
     }
 
     @Test
-    void crearReserva_devuelveReservaCreada() {
-        ReservaDto dto = new ReservaDto(
-                1L, 1L, 2L,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
-                200.0
-        );
+    void crearReserva_deberiaCrearYDevolverReserva() throws Exception {
+        String json = String.format("""
+            {
+              "id": null,
+              "hotelId": 1,
+              "habitacionId": 1,
+              "usuarioId": %d,
+              "fechaEntrada": "%s",
+              "fechaSalida": "%s",
+              "precio": 200.0
+            }
+        """, usuarioId,
+                LocalDate.now().plusDays(1).toString(),
+                LocalDate.now().plusDays(3).toString());
 
-        when(reservaService.crearReserva(ArgumentMatchers.eq(dto))).thenReturn(dto);
-
-        ResponseEntity<ReservaDto> response = reservaController.crearReserva(dto);
-
-        verify(reservaService).crearReserva(dto);
-        assertThat(response.getBody()).isEqualTo(dto);
+        mockMvc.perform(post("/reservas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.usuarioId").value(usuarioId));
     }
 
     @Test
-    void verReservasPropias_devuelveLista() {
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("1");
+    void verReservasPropias_deberiaListarCorrectamente() throws Exception {
+        // Primero crea una reserva para ese usuario
+        crearReserva_deberiaCrearYDevolverReserva();
 
-        ReservaDto dto = new ReservaDto(
-                10L, 1L, 2L,
-                LocalDate.now(),
-                LocalDate.now().plusDays(1),
-                100.0
-        );
-        when(reservaService.reservasPorUsuario(1L)).thenReturn(List.of(dto));
-
-        ResponseEntity<List<ReservaDto>> response = reservaController.verReservasPropias(auth);
-
-        verify(reservaService).reservasPorUsuario(1L);
-        assertThat(response.getBody()).hasSize(1);
+        mockMvc.perform(get("/reservas/propias")
+                        .param("usuarioId", usuarioId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].usuarioId").value(usuarioId));
     }
 
     @Test
-    void verTodasReservas_devuelveLista() {
-        ReservaDto dto = new ReservaDto(
-                1L, 1L, 2L,
-                LocalDate.now(),
-                LocalDate.now().plusDays(2),
-                300.0
-        );
-        when(reservaService.todasReservas()).thenReturn(List.of(dto));
+    void verTodasReservas_deberiaRetornarLista() throws Exception {
+        // Crear una reserva
+        crearReserva_deberiaCrearYDevolverReserva();
 
-        ResponseEntity<List<ReservaDto>> response = reservaController.verTodasReservas();
-
-        verify(reservaService).todasReservas();
-        assertThat(response.getBody()).hasSize(1);
+        mockMvc.perform(get("/reservas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].precio").value(200.0));
     }
 }
+
 

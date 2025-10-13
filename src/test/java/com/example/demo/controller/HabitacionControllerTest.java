@@ -1,66 +1,54 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.HabitacionDto;
-import com.example.demo.service.HabitacionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(HabitacionController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class HabitacionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private HabitacionService habitacionService;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
     private HabitacionDto dto;
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        HabitacionService habitacionService() {
-            return Mockito.mock(HabitacionService.class);
-        }
-    }
-
     @BeforeEach
     void setUp() {
-        dto = new HabitacionDto(1L, "Habitación A", "Calle Falsa 123", 2,1L,100.0);
+        dto = new HabitacionDto(
+                1L,
+                "Habitación A",
+                "Calle Falsa 123",
+                2,
+                1L,
+                100.0
+        );
     }
 
     @Test
     void listarPorHotel_DeberiaRetornarListaHabitaciones() throws Exception {
-        Mockito.when(habitacionService.listarHabitacionesPorHotel(1L)).thenReturn(List.of(dto));
-
+        // Debes asegurarte que exista una habitación en la base de datos test con hotelId = 1
         mockMvc.perform(get("/rooms/{hotelId}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nombreHotel").value("Habitación A"))
-                .andExpect(jsonPath("$[0].direccion").value("Calle Falsa 123"));
+                .andExpect(jsonPath("$[0].nombreHotel").exists());
     }
 
     @Test
     void crear_DeberiaCrearHabitacionYRetornarDto() throws Exception {
-        Mockito.when(habitacionService.crearHabitacion(any(HabitacionDto.class))).thenReturn(dto);
-
         mockMvc.perform(post("/rooms")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -71,8 +59,7 @@ class HabitacionControllerTest {
 
     @Test
     void editar_DeberiaActualizarHabitacion() throws Exception {
-        Mockito.when(habitacionService.editarHabitacion(eq(1L), any(HabitacionDto.class))).thenReturn(dto);
-
+        // Asegúrate de crear una habitación previamente con ID = 1L, o cambia este test para encadenar primero una creación
         mockMvc.perform(put("/rooms/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -82,10 +69,10 @@ class HabitacionControllerTest {
 
     @Test
     void eliminar_DeberiaEliminarHabitacion() throws Exception {
+        // Asegúrate de tener una habitación con ID = 1L antes de ejecutar este test.
         mockMvc.perform(delete("/rooms/{id}", 1L))
                 .andExpect(status().isNoContent());
-
-        Mockito.verify(habitacionService).eliminarHabitacion(1L);
     }
 }
+
 
