@@ -24,7 +24,7 @@ public class UsuarioController {
     private final UsuarioMapper usuarioMapper;
 
     // Listar todos los usuarios
-    @GetMapping
+    @GetMapping("/lista")
     public ResponseEntity<ResponseDTO<List<UsuarioDto>>> obtenerTodas() {
         List<UsuarioDto> usuarioDTO = service.listarUsuarios();
         return ResponseEntity.ok(new ResponseDTO<>(false, usuarioDTO));

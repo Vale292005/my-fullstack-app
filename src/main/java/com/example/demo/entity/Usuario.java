@@ -40,7 +40,7 @@ public class Usuario {
     private Rol rol;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Habitacion> hoteles = new ArrayList<>();
+    private List<Hotel> hoteles = new ArrayList<>();
     public boolean activo;
 
 }

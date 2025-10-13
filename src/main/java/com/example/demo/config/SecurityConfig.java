@@ -26,7 +26,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()  // rutas públicas
+                        .requestMatchers("/auth/**", "/usuarios/**", "/hoteles/**").permitAll()// rutas públicas
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -41,6 +42,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();

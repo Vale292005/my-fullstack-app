@@ -21,9 +21,9 @@ public class HotelService {
         List<Hotel> hoteles;
 
         if (ciudad != null && nombre != null) {
-            hoteles = hotelRepository.findByCiudadContainingIgnoreCaseAndNombreContainingIgnoreCase(ciudad, nombre);
+            hoteles = hotelRepository.findByDireccionContainingIgnoreCaseAndNombreContainingIgnoreCase(ciudad, nombre);
         } else if (ciudad != null) {
-            hoteles = hotelRepository.findByCiudadContainingIgnoreCase(ciudad);
+            hoteles = hotelRepository.findByDireccionContainingIgnoreCase(ciudad);
         } else if (nombre != null) {
             hoteles = hotelRepository.findByNombreContainingIgnoreCase(nombre);
         } else {
