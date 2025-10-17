@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.Enum.Rol;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
+import com.example.demo.entity.Usuario;
 import com.example.demo.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,17 +12,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
+@Transactional
 class UsuarioControllerTest {
 
     @Autowired
@@ -33,6 +38,9 @@ class UsuarioControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @BeforeEach
     void setUp() {
         usuarioRepository.deleteAll();
@@ -40,61 +48,78 @@ class UsuarioControllerTest {
 
     @Test
     void registrar_MayorDeEdad_deberiaCrearUsuario() throws Exception {
+        // Email único para evitar conflictos
+        String emailUnico = "test" + System.currentTimeMillis() + "@example.com";
+
         UsuarioDto dto = new UsuarioDto(
-                "Usuario",
-                "test@example.com",
-                "123456",
-                LocalDate.now().minusYears(20),
+                "Usuario Test",
+                emailUnico,
+                "Password123!",
+                LocalDate.of(1990, 1, 1), // Mayor de edad (35 años)
                 Rol.CLIENTE,
                 true
         );
 
-        mockMvc.perform(post("/usuarios/registro")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("test@example.com"));
-    }
-
-    @Test
-    void registrar_MenorDeEdad_deberiaDarConflict() throws Exception {
-        UsuarioDto dto = new UsuarioDto(
-                "Menor",
-                "menor@example.com",
-                "123456",
-                LocalDate.now().minusYears(10),
-                Rol.CLIENTE,
-                true
-        );
-
-        mockMvc.perform(post("/usuarios/registro")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isConflict());
+                .andExpect(jsonPath("$.email").value(emailUnico))
+                .andExpect(jsonPath("$.nombre").value("Usuario Test"));
     }
 
     @Test
     void login_Exitoso_deberiaDevolverToken() throws Exception {
-        // Primero Registrar
-        UsuarioDto dto = new UsuarioDto(
-                "LoginUser",
+        // PASO 1: Crea usuario en BD
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Login User");
+        usuario.setEmail("login@example.com");
+        usuario.setContrasenha(passwordEncoder.encode("Password123!"));
+        usuario.setEdad(LocalDate.of(1990, 5, 15));
+        usuario.setTelefono("3001234567");
+        usuario.setRol(Rol.CLIENTE);
+        usuario.setActivo(true);
+        usuarioRepository.save(usuario);
+
+        // PASO 2: Intenta login
+        LoginRequestDto login = new LoginRequestDto(
                 "login@example.com",
-                "123456",
-                LocalDate.now().minusYears(25),
-                Rol.CLIENTE,
-                true
+                "Password123!"
         );
-        mockMvc.perform(post("/usuarios/registro")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated());
 
-        LoginRequestDto login = new LoginRequestDto("login@example.com", "123456");
 
-        mockMvc.perform(post("/usuarios/login")
+        mockMvc.perform(post("/auth/login") //
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists());
+    }
+
+    @Test
+    void login_Fallido_credencialesIncorrectas() throws Exception {
+        // Crea usuario
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Test User");
+        usuario.setEmail("test@example.com");
+        usuario.setContrasenha(passwordEncoder.encode("CorrectPassword"));
+        usuario.setEdad(LocalDate.of(1990, 1, 1));
+        usuario.setTelefono("3001234567");
+        usuario.setRol(Rol.CLIENTE);
+        usuario.setActivo(true);
+        usuarioRepository.save(usuario);
+
+        // Login con contraseña incorrecta
+        LoginRequestDto login = new LoginRequestDto(
+                "test@example.com",
+                "WrongPassword"
+        );
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(login)))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
     }
 }

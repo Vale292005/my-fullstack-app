@@ -14,7 +14,8 @@ public class DocumentosHost {
     @Id
     @GeneratedValue
     private Long id;
-    @OneToOne
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
     private String identificacion;

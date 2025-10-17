@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.ReservaDto;
 import com.example.demo.service.ReservaService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -22,16 +23,16 @@ public class ReservaController {
     @PostMapping
     public ResponseEntity<ReservaDto> crearReserva(@RequestBody ReservaDto dto) {
         ReservaDto reserva = reservaService.crearReserva(dto);
-        return ResponseEntity.ok(reserva);
+        return ResponseEntity.status(HttpStatus.CREATED).body(reserva);
     }
 
     // Ver reservas propias (usa Authentication para obtener usuario actual)
-    @GetMapping
-    public ResponseEntity<List<ReservaDto>> verReservasPropias(Authentication auth) {
-        Long usuarioId = Long.parseLong(auth.getName()); // se asume que el JWT tiene el ID del usuario en getName()
+    @GetMapping("/lista/{usuarioId}")
+    public ResponseEntity<List<ReservaDto>> verReservasPropias(@PathVariable Long usuarioId) {
         List<ReservaDto> reservas = reservaService.reservasPorUsuario(usuarioId);
         return ResponseEntity.ok(reservas);
     }
+
 
     // Ver todas las reservas (admin o anfitrion)
     @GetMapping("/all")

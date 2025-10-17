@@ -1,13 +1,18 @@
 package com.example.demo.controller;
 
+import com.example.demo.Enum.Rol;
 import com.example.demo.dto.ReservaDto;
 import com.example.demo.entity.DocumentosHost;
+import com.example.demo.entity.Usuario;
+import com.example.demo.repository.UsuarioRepository;
 import com.example.demo.service.UsuarioService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +25,26 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test") // Usa application-test.properties
 @Transactional
 class AdminControllerTest {
+    private UsuarioRepository usuarioRepository;
+    private Long usuarioId;
+    private PasswordEncoder passwordEncoder;
+
+    @BeforeEach
+    void setUp() {
+        usuarioRepository.deleteAll();
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Admin Test");
+        usuario.setEmail("admin@test.com");
+        usuario.setContrasenha(passwordEncoder.encode("password"));
+        usuario.setEdad(LocalDate.of(1990, 1, 1));
+        usuario.setTelefono("3001234567");
+        usuario.setRol(Rol.ADMIN);
+        usuario.setActivo(true);
+        usuario = usuarioRepository.save(usuario);
+
+        // Guarda el ID para usarlo en los tests
+        this.usuarioId = usuario.getId();
+    }
 
     @Autowired
     private AdminController adminController;

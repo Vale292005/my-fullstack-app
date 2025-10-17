@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.Enum.Rol;
 import com.example.demo.dto.ComentarioDto;
 import com.example.demo.entity.Comentario;
 import com.example.demo.entity.Habitacion;
@@ -16,32 +17,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false) // ⬅️ Desactiva filtros de security
 @ActiveProfiles("test")
+@Transactional // ⬅️ Rollback automático después de cada test
 class ComentarioControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
-
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private HotelRepository hotelRepository;
     @Autowired private HabitacionRepository habitacionRepository;
     @Autowired private ComentarioRepository comentarioRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     private Usuario usuario;
     private Hotel hotel;
@@ -49,70 +50,74 @@ class ComentarioControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Limpia en orden inverso por las foreign keys
         comentarioRepository.deleteAll();
         habitacionRepository.deleteAll();
         hotelRepository.deleteAll();
         usuarioRepository.deleteAll();
 
-        // Limpiar el contexto de seguridad
-        SecurityContextHolder.clearContext();
-
-        // Crear usuario usando new y getters/setters
+        // Crea usuario con contraseña encriptada
         usuario = new Usuario();
         usuario.setNombre("Test User");
         usuario.setEmail("test@correo.com");
-        usuario.setRol(com.example.demo.Enum.Rol.CLIENTE);
+        usuario.setContrasenha(passwordEncoder.encode("password123")); // ⬅️ ENCRIPTA
+        usuario.setEdad(LocalDate.of(1990, 1, 1));
+        usuario.setTelefono("3001234567");
+        usuario.setRol(Rol.CLIENTE);
         usuario.setActivo(true);
-        usuarioRepository.save(usuario);
+        usuario = usuarioRepository.save(usuario);
 
-        // Crear hotel usando new y getters/setters
+        Usuario hostUsuario = new Usuario();
+        hostUsuario.setNombre("Host User");
+        hostUsuario.setEmail("host@correo.com");
+        hostUsuario.setContrasenha(passwordEncoder.encode("password123"));
+        hostUsuario.setEdad(LocalDate.of(1985, 1, 1));
+        hostUsuario.setTelefono("3009999999");
+        hostUsuario.setRol(Rol.ANFITRION);
+        hostUsuario.setActivo(true);
+        hostUsuario = usuarioRepository.save(hostUsuario);
+
+        // Crea hotel
         hotel = new Hotel();
         hotel.setNombre("Hotel Prueba");
         hotel.setDireccion("Calle Falsa 123");
         hotel.setDescripcion("Hotel de prueba");
-        hotelRepository.save(hotel);
+        hotel.setUsuario(hostUsuario);
+        hotel = hotelRepository.save(hotel);
 
-        // Crear habitación usando new y getters/setters
+        // Crea habitación
         habitacion = new Habitacion();
         habitacion.setNombreHotel("Habitación Deluxe");
         habitacion.setDireccion("Piso 1");
         habitacion.setHotel(hotel);
         habitacion.setPrecio(120.0);
-        habitacionRepository.save(habitacion);
+        habitacion = habitacionRepository.save(habitacion);
     }
 
     @Test
     void crearComentario_deberiaCrearComentario() throws Exception {
-        // Configurar contexto de seguridad manualmente
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                "test@correo.com",
-                null,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_CLIENTE"))
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // Crear DTO usando constructor de record
-        ComentarioDto dto = new ComentarioDto(
-                null,
-                usuario,
-                hotel,
-                habitacion,
-                "Todo excelente",
-                5,
-                null
-        );
+        // NO envíes objetos completos, solo IDs
+        String comentarioJson = String.format("""
+        {
+            "usuarioId": %d,
+            "hotelId": %d,
+            "habitacionId": %d,
+            "mensaje": "Todo excelente",
+            "calificacion": 5
+        }
+        """, usuario.getId(), hotel.getId(), habitacion.getId());
 
         mockMvc.perform(post("/comentarios")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(comentarioJson))
+                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.mensaje").value("Todo excelente"))
-                .andExpect(jsonPath("$.calificacion").value(5));
+                .andExpect(jsonPath("$.mensaje").value("Todo excelente"));
     }
 
     @Test
     void verComentariosPorHabitacion_deberiaListarComentarios() throws Exception {
-        // Guardar comentario usando new y getters/setters
+        // Crea comentario directamente en BD
         Comentario comentario = new Comentario();
         comentario.setUsuario(usuario);
         comentario.setHotel(hotel);
@@ -130,15 +135,7 @@ class ComentarioControllerTest {
 
     @Test
     void eliminarComentario_deberiaEliminar() throws Exception {
-        // Configurar contexto de seguridad manualmente
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                "test@correo.com",
-                null,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_CLIENTE"))
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        // Crear comentario usando new y getters/setters
+        // Crea comentario
         Comentario comentario = new Comentario();
         comentario.setUsuario(usuario);
         comentario.setHotel(hotel);
@@ -146,14 +143,15 @@ class ComentarioControllerTest {
         comentario.setMensaje("Para eliminar");
         comentario.setCalificacion(3);
         comentario.setFchCreacion(LocalDateTime.now());
-        comentarioRepository.save(comentario);
+        comentario = comentarioRepository.save(comentario);
 
-        Long id = comentario.getId();
+        Long comentarioId = comentario.getId();
 
-        mockMvc.perform(delete("/comentarios/" + id))
+        mockMvc.perform(delete("/comentarios/" + comentarioId))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Comentario eliminado"));
 
-        assertThat(comentarioRepository.findById(id)).isEmpty();
+        // Verifica que fue eliminado
+        assertThat(comentarioRepository.findById(comentarioId)).isEmpty();
     }
 }

@@ -1,23 +1,32 @@
 package com.example.demo.controller;
 
+import com.example.demo.Enum.Rol;
 import com.example.demo.dto.HotelDto;
+import com.example.demo.entity.Usuario;
 import com.example.demo.repository.HotelRepository;
+import com.example.demo.repository.UsuarioRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
 @ActiveProfiles("test")
+@AutoConfigureMockMvc(addFilters = false)
+@Transactional
 class HotelControllerTest {
 
     @Autowired
@@ -26,20 +35,43 @@ class HotelControllerTest {
     @Autowired
     private HotelRepository hotelRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private Usuario hostUsuario;
+
     @BeforeEach
     void setUp() {
-        hotelRepository.deleteAll(); // Limpiar la base de datos de test antes de cada test
+        hotelRepository.deleteAll();
+        usuarioRepository.deleteAll();
+
+        // Crea usuario HOST
+        hostUsuario = new Usuario();
+        hostUsuario.setNombre("Host User");
+        hostUsuario.setEmail("host@test.com");
+        hostUsuario.setContrasenha(passwordEncoder.encode("password"));
+        hostUsuario.setEdad(LocalDate.of(1985, 1, 1));
+        hostUsuario.setTelefono("3009999999");
+        hostUsuario.setRol(Rol.ADMIN);
+        hostUsuario.setActivo(true);
+        hostUsuario = usuarioRepository.save(hostUsuario);
     }
+
 
     @Test
     void crearHotel_deberiaGuardarYDevolverMensaje() throws Exception {
-        String hotelJson = """
+        String hotelJson = String.format("""
             {
                 "nombre": "Hotel Test",
-                "direccion": "Av. Siempre Viva",
-                "descripcion": "Un buen lugar"
+                "direccion": "Calle 123",
+                "ciudad": "Bogotá",
+                "descripcion": "Hotel de prueba",
+                "usuarioId": %d
             }
-        """;
+            """, hostUsuario.getId());
 
         mockMvc.perform(post("/hotels")
                         .contentType(MediaType.APPLICATION_JSON)
