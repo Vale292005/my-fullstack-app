@@ -4,9 +4,13 @@ import com.example.demo.Enum.Rol;
 import com.example.demo.dto.usuariodto.AuthResponseDto;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
+import com.example.demo.entity.Usuario;
+import com.example.demo.repository.UsuarioRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,17 +27,38 @@ class AuthControllerTest {
 
     @Autowired
     private AuthController authController;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @BeforeEach
+    void setUp() {
+        // Limpiar la tabla antes de cada prueba
+        usuarioRepository.deleteAll();
+
+        Usuario user = new Usuario();
+        user.setNombre("UsuarioLogi");
+        user.setEmail("login@example.com");
+        user.setTelefono("123");
+        user.setEdad(LocalDate.now().minusYears(25));
+        user.setContrasenha(passwordEncoder.encode("123"));
+        user.setRol(Rol.CLIENTE);
+        user.setActivo(true);
+        usuarioRepository.save(user);
+    }
 
     @Test
     void testRegister_MayorDeEdad() {
         UsuarioDto usuarioDto = new UsuarioDto(
-                "Usuario",
-                "test@example.com",
+                "UsuarioLogin",
+                "login@example.com",
                 "123",
-                LocalDate.now().minusYears(20),
+                LocalDate.now().minusYears(25),
+                "123",
                 Rol.CLIENTE,
                 true
         );
+
 
         ResponseEntity<?> response = authController.register(usuarioDto);
 
@@ -47,6 +72,7 @@ class AuthControllerTest {
                 "menor@example.com",
                 "123",
                 LocalDate.now().minusYears(10),
+                "321",
                 Rol.CLIENTE,
                 true
         );
@@ -65,6 +91,7 @@ class AuthControllerTest {
                 "login@example.com",
                 "123",
                 LocalDate.now().minusYears(25),
+                "456",
                 Rol.CLIENTE,
                 true
         );

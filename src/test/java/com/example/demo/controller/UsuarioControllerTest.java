@@ -56,6 +56,7 @@ class UsuarioControllerTest {
                 emailUnico,
                 "Password123!",
                 LocalDate.of(1990, 1, 1), // Mayor de edad (35 años)
+                "453",
                 Rol.CLIENTE,
                 true
         );

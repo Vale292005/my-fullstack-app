@@ -10,7 +10,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_KEY = "secreto_super_seguro";
+    private final String SECRET_KEY = "El día de la boda te doy puñalada Te arranco el ombligo y mato a tu mamá";
 
     public String generarToken(String email, Rol rol) {
         return Jwts.builder()

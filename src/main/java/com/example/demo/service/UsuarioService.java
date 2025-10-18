@@ -71,6 +71,7 @@ public class UsuarioService {
         return repository.save(usuario);
     }
 
+
     // Eliminar usuario
     public void eliminarUsuario(Long id) {
         repository.deleteById(id);
@@ -113,9 +114,12 @@ public class UsuarioService {
 
         if (!usuario.isActivo()) {
             throw new RuntimeException("Cuenta no confirmada");
-        }
 
-        if (!passwordEncoder.matches(dto.password(), usuario.getContrasenha())) {
+        }System.out.println("DTO contraseña: " + dto.contrasenha());
+        System.out.println("Usuario contraseña en BD: " + usuario.getContrasenha());
+
+
+        if (!passwordEncoder.matches(dto.contrasenha(), usuario.getContrasenha())) {
             throw new RuntimeException("Credenciales inválidas");
         }
 

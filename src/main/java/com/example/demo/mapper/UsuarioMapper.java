@@ -11,12 +11,10 @@ public interface UsuarioMapper {
 
     UsuarioMapper INSTANCE = Mappers.getMapper(UsuarioMapper.class);
 
-    // Entidad → DTO (ignora la contraseña)
-    @Mapping(target = "rol", source = "rol")
+    // Entidad → DTO
     UsuarioDto toDto(Usuario usuario);
 
-    // DTO → Entidad (deja la contraseña como null)
-    @Mapping(target = "contrasenha", ignore = true)
+    // DTO → Entidad
     Usuario toEntity(UsuarioDto dto);
 }
 

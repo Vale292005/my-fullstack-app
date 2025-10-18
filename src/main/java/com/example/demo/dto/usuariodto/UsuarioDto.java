@@ -9,6 +9,7 @@ public record UsuarioDto(
         String telefono,
         String email,
         LocalDate edad,
+        String contrasenha,
         Rol rol,
         boolean activo
 ) {}

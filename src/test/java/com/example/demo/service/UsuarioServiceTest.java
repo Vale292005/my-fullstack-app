@@ -50,7 +50,7 @@ class UsuarioServiceTest {
     @Test
     void testListarUsuarios() {
         when(usuarioRepository.findAll()).thenReturn(List.of(usuario));
-        when(usuarioMapper.toDto(usuario)).thenReturn(new UsuarioDto("Usuario", "test@example.com", "123", LocalDate.now(), Rol.CLIENTE,false ));
+        when(usuarioMapper.toDto(usuario)).thenReturn(new UsuarioDto("Usuario", "test@example.com", "123", LocalDate.now(),"245", Rol.CLIENTE,false ));
 
         List<UsuarioDto> result = usuarioService.listarUsuarios();
 
