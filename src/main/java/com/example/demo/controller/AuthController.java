@@ -36,9 +36,18 @@ public class AuthController {
     //entrar
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDto dto) {
-        String token = servicio.login(dto);
-        return ResponseEntity.ok(new AuthResponseDto(token, "Inicio de sesión exitoso"));
+        try {
+            String token = servicio.login(dto);
+            return ResponseEntity.ok(new AuthResponseDto(token, "Inicio de sesión exitoso"));
+        } catch (RuntimeException e) {
+            if ("Credenciales inválidas".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+            }
+            // opcional: manejar otros errores
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
+
 
     @GetMapping("/confirm")
     public ResponseEntity<?> confirmar(@RequestParam String email) {

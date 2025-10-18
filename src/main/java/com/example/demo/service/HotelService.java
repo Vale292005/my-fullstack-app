@@ -2,7 +2,12 @@ package com.example.demo.service;
 
 import com.example.demo.dto.HotelDto;
 import com.example.demo.entity.Hotel;
+import com.example.demo.entity.Usuario;
 import com.example.demo.repository.HotelRepository;
+import com.example.demo.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,6 +17,8 @@ import java.util.stream.Collectors;
 public class HotelService {
 
     private final HotelRepository hotelRepository;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     public HotelService(HotelRepository hotelRepository) {
         this.hotelRepository = hotelRepository;
@@ -43,10 +50,16 @@ public class HotelService {
     }
 
     public void crearHotel(HotelDto dto) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         Hotel hotel = new Hotel();
         hotel.setNombre(dto.nombre());
         hotel.setDireccion(dto.direccion());
         hotel.setDescripcion(dto.descripcion());
+        hotel.setUsuario(usuario);
         hotelRepository.save(hotel);
     }
 

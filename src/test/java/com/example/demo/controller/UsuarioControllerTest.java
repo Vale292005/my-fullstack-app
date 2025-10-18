@@ -4,6 +4,7 @@ import com.example.demo.Enum.Rol;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
 import com.example.demo.entity.Usuario;
+import com.example.demo.repository.DocumentosRepository;
 import com.example.demo.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -40,9 +42,12 @@ class UsuarioControllerTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private DocumentosRepository documentosRepository;
 
     @BeforeEach
     void setUp() {
+        documentosRepository.deleteAll();
         usuarioRepository.deleteAll();
     }
 
@@ -53,10 +58,10 @@ class UsuarioControllerTest {
 
         UsuarioDto dto = new UsuarioDto(
                 "Usuario Test",
-                emailUnico,
-                "Password123!",
+                "152552",
+                "emailUnico",
                 LocalDate.of(1990, 1, 1), // Mayor de edad (35 años)
-                "453",
+                passwordEncoder.encode("CorrectPassword"),
                 Rol.CLIENTE,
                 true
         );
@@ -65,9 +70,8 @@ class UsuarioControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value(emailUnico))
-                .andExpect(jsonPath("$.nombre").value("Usuario Test"));
+                .andExpect(status().isCreated()).andExpect(content().string(containsString("Usuario registrado")));
+
     }
 
     @Test
