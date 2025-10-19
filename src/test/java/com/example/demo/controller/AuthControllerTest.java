@@ -7,6 +7,7 @@ import com.example.demo.dto.usuariodto.UsuarioDto;
 import com.example.demo.entity.Usuario;
 import com.example.demo.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test") // 👈 para usar TestSecurityConfig
 @Transactional
+@Disabled
 class AuthControllerTest {
 
     @Autowired

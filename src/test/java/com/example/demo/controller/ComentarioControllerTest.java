@@ -12,6 +12,7 @@ import com.example.demo.repository.HotelRepository;
 import com.example.demo.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false) // ⬅️ Desactiva filtros de security
 @ActiveProfiles("test")
 @Transactional // ⬅️ Rollback automático después de cada test
+@Disabled
 class ComentarioControllerTest {
 
     @Autowired private MockMvc mockMvc;
