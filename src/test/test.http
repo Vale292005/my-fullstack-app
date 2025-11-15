@@ -1,0 +1,74 @@
+##########################################
+# Variables iniciales
+##########################################
+@baseUrl = http://localhost:8080
+@email = juan@example.com
+@token ="eyJhbGciOiJIUzI1NiJ9.eyJyb2wiOiJDTElFTlRFIiwic3ViIjoianVhbkBleGFtcGxlLmNvbSIsImlhdCI6MTc2MzI0OTQ3NCwiZXhwIjoxNzYzMzM1ODc0fQ.25PaUQNmSNLN_KYPm3W21A71E1pgVFNbZ_Hrva0kit4"
+
+##########################################
+# 1️⃣ Registro de usuario
+##########################################
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "telefono": "3000000000",
+  "email": "{{email}}",
+  "edad": "2005-01-01",
+  "contrasenha": "123456",
+  "rol": "CLIENTE",
+  "activo": true
+}
+
+###
+
+##########################################
+# 2️⃣ Login
+##########################################
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "contrasenha": "123456"
+}
+
+###
+
+# Copia el token aquí:
+# @token = eyJh…
+
+##########################################
+# 3️⃣ Confirmar cuenta por email
+##########################################
+GET {{baseUrl}}/auth/confirm?email={{email}}
+
+###
+
+##########################################
+# 4️⃣ Logout (token obligatorio)
+##########################################
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+###
+
+##########################################
+# 5️⃣ Confirmar email por token
+##########################################
+GET {{baseUrl}}/auth/confirmar?token=ABC123TOKEN
+
+###
+
+##########################################
+# 6️⃣ Reenviar confirmación
+##########################################
+POST {{baseUrl}}/auth/resend-confirmation?email={{email}}
+
+###
+
+##########################################
+# 7️⃣ Recuperar contraseña
+##########################################
+POST {{baseUrl}}/auth/forgot-password?email={{email}}

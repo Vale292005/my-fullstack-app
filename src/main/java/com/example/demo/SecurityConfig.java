@@ -32,7 +32,8 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
       // ⚡ CORS
-      .cors(cors -> {})
+      .cors(cors -> {
+      })
 
       // ⚡ CSRF deshabilitado
       .csrf(csrf -> csrf.disable())
@@ -66,6 +67,7 @@ public class SecurityConfig {
   public PasswordEncoder passwordEncoder() {
     return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
   }
+
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
@@ -87,7 +89,5 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/**", configuration);
     return source;
   }
-
-
 }
 

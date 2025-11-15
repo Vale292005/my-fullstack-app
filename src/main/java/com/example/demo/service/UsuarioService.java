@@ -97,6 +97,7 @@ public class UsuarioService {
 
   // Login usando JwtService
   public String login(LoginRequestDto dto) {
+
     Usuario usuario = repository.findByEmail(dto.email())
       .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -108,15 +109,10 @@ public class UsuarioService {
       throw new RuntimeException("Credenciales inválidas");
     }
 
-    // Generar token con JwtService
-    String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
-
-    if (!esTokenValido(token)) {
-      throw new RuntimeException("Token inválido o expirado");
-    }
-
-    return token;
+    // Generar token
+    return jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
   }
+
 
   public Optional<Usuario> findByNombre(String nombre) {
     return repository.findByNombre(nombre);

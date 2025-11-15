@@ -16,17 +16,17 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
-    private final CustomUserDetailsService userDetailsService;
-    private final JwtBlacklistService jwtBlacklistService;
+  private final JwtService jwtService;
+  private final CustomUserDetailsService userDetailsService;
+  private final JwtBlacklistService jwtBlacklistService;
 
-    public JwtAuthenticationFilter(JwtService jwtService,
-                                   CustomUserDetailsService userDetailsService,
-                                   JwtBlacklistService jwtBlacklistService) {
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-        this.jwtBlacklistService = jwtBlacklistService;
-    }
+  public JwtAuthenticationFilter(JwtService jwtService,
+                                 CustomUserDetailsService userDetailsService,
+                                 JwtBlacklistService jwtBlacklistService) {
+    this.jwtService = jwtService;
+    this.userDetailsService = userDetailsService;
+    this.jwtBlacklistService = jwtBlacklistService;
+  }
 
   @Override
   protected void doFilterInternal(HttpServletRequest request,
@@ -34,14 +34,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                   FilterChain filterChain)
 
     throws ServletException, IOException {
-    System.out.println("Request URI: " + request.getRequestURI());
-    System.out.println("Authorization header: " + request.getHeader("Authorization"));
 
 
     String path = request.getRequestURI();
+    System.out.println("Request URI: " + request.getRequestURI());
+    System.out.println("Authorization header: " + request.getHeader("Authorization"));
 
     // ⚡ Ignorar rutas públicas
-    if (path.startsWith("/auth/") || path.startsWith("/hoteles/")) {
+    if (path.startsWith("/auth") || path.startsWith("/hoteles")) {
       filterChain.doFilter(request, response);
       return;
     }
