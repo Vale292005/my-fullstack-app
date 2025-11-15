@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.Enum.Rol;
+import com.example.demo.config.JwtService;
 import com.example.demo.config.JwtUtil;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
@@ -23,89 +24,100 @@ import static org.mockito.Mockito.*;
 
 class UsuarioServiceTest {
 
-    @Mock private UsuarioRepository usuarioRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private EmailService emailService;
-    @Mock private UsuarioMapper usuarioMapper;
-    @Mock private DocumentosRepository documentosRepository;
-    @Mock private JwtUtil jwtUtil;
+  @Mock
+  private UsuarioRepository usuarioRepository;
+  @Mock
+  private PasswordEncoder passwordEncoder;
+  @Mock
+  private EmailService emailService;
+  @Mock
+  private UsuarioMapper usuarioMapper;
+  @Mock
+  private DocumentosRepository documentosRepository;
 
-    @InjectMocks
-    private UsuarioService usuarioService;
+  @InjectMocks
+  private UsuarioService usuarioService;
 
-    private Usuario usuario;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        usuario = new Usuario();
-        usuario.setId(1L);
-        usuario.setEmail("test@example.com");
-        usuario.setNombre("Usuario");
-        usuario.setContrasenha("password");
-        usuario.setActivo(true);
-        usuario.setRol(Rol.CLIENTE);
-    }
+  private Usuario usuario;
+  @Mock
+  private JwtService jwtService;
 
-    @Test
-    void testListarUsuarios() {
-        when(usuarioRepository.findAll()).thenReturn(List.of(usuario));
-        when(usuarioMapper.toDto(usuario)).thenReturn(new UsuarioDto("Usuario", "test@example.com", "123", LocalDate.now(),"245", Rol.CLIENTE,false ));
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+    usuario = new Usuario();
+    usuario.setId(1L);
+    usuario.setEmail("test@example.com");
+    usuario.setNombre("Usuario");
+    usuario.setContrasenha("password");
+    usuario.setActivo(true);
+    usuario.setRol(Rol.CLIENTE);
+  }
 
-        List<UsuarioDto> result = usuarioService.listarUsuarios();
+  @Test
+  void testListarUsuarios() {
+    when(usuarioRepository.findAll()).thenReturn(List.of(usuario));
+    when(usuarioMapper.toDto(usuario)).thenReturn(new UsuarioDto("Usuario", "test@example.com", "123", LocalDate.now(), "245", Rol.CLIENTE, false));
 
-        assertEquals(1, result.size());
-        verify(usuarioRepository).findAll();
-    }
+    List<UsuarioDto> result = usuarioService.listarUsuarios();
 
-    @Test
-    void testCrearUsuario_Exitoso() {
-        when(usuarioRepository.findByNombre("Usuario")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+    assertEquals(1, result.size());
+    verify(usuarioRepository).findAll();
+  }
 
-        Usuario nuevo = new Usuario();
-        nuevo.setNombre("Usuario");
-        nuevo.setContrasenha("12345");
+  @Test
+  void testCrearUsuario_Exitoso() {
+    when(usuarioRepository.findByNombre("Usuario")).thenReturn(Optional.empty());
+    when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+    when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
-        Usuario result = usuarioService.crearUsuario(nuevo);
+    Usuario nuevo = new Usuario();
+    nuevo.setNombre("Usuario");
+    nuevo.setContrasenha("12345");
 
-        assertEquals("Usuario", result.getNombre());
-        verify(usuarioRepository).save(any(Usuario.class));
-    }
+    Usuario result = usuarioService.crearUsuario(nuevo);
 
-    @Test
-    void testLogin_Exitoso() {
-        LoginRequestDto dto = new LoginRequestDto("test@example.com", "password");
-        when(usuarioRepository.findByEmail("test@example.com")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("password", "password")).thenReturn(true);
-        when(jwtUtil.generarToken("test@example.com", Rol.CLIENTE)).thenReturn("jwt-token");
+    assertEquals("Usuario", result.getNombre());
+    verify(usuarioRepository).save(any(Usuario.class));
+  }
 
-        String token = usuarioService.login(dto);
+  @Test
+  void testLogin_Exitoso() {
+    LoginRequestDto dto = new LoginRequestDto("test@example.com", "password");
 
-        assertEquals("jwt-token", token);
-    }
+    when(usuarioRepository.findByEmail("test@example.com")).thenReturn(Optional.of(usuario));
+    when(passwordEncoder.matches("password", usuario.getContrasenha())).thenReturn(true);
 
-    @Test
-    void testLogin_FallaPorCredenciales() {
-        LoginRequestDto dto = new LoginRequestDto("test@example.com", "wrong");
-        when(usuarioRepository.findByEmail("test@example.com")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("wrong", "password")).thenReturn(false);
+    // Mock correcto
+    when(jwtService.generateToken("test@example.com", Rol.CLIENTE.name())).thenReturn("jwt-token");
 
-        assertThrows(RuntimeException.class, () -> usuarioService.login(dto));
-    }
+    String token = usuarioService.login(dto);
 
-    @Test
-    void testEsMayorDeEdad() {
-        assertTrue(usuarioService.esMayorDeEdad(LocalDate.now().minusYears(18)));
-        assertFalse(usuarioService.esMayorDeEdad(LocalDate.now().minusYears(17)));
-    }
+    assertEquals("jwt-token", token);
+  }
 
-    @Test
-    void testInvalidarYValidarToken() {
-        String token = "abc123";
-        usuarioService.invalidarToken(token);
-        assertFalse(usuarioService.esTokenValido(token));
-    }
+
+  @Test
+  void testLogin_FallaPorCredenciales() {
+    LoginRequestDto dto = new LoginRequestDto("test@example.com", "wrong");
+    when(usuarioRepository.findByEmail("test@example.com")).thenReturn(Optional.of(usuario));
+    when(passwordEncoder.matches("wrong", "password")).thenReturn(false);
+
+    assertThrows(RuntimeException.class, () -> usuarioService.login(dto));
+  }
+
+  @Test
+  void testEsMayorDeEdad() {
+    assertTrue(usuarioService.esMayorDeEdad(LocalDate.now().minusYears(18)));
+    assertFalse(usuarioService.esMayorDeEdad(LocalDate.now().minusYears(17)));
+  }
+
+  @Test
+  void testInvalidarYValidarToken() {
+    String token = "abc123";
+    usuarioService.invalidarToken(token);
+    assertFalse(usuarioService.esTokenValido(token));
+  }
 }
 

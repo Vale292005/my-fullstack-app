@@ -28,43 +28,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtBlacklistService = jwtBlacklistService;
     }
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+  @Override
+  protected void doFilterInternal(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  FilterChain filterChain)
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String username;
+    throws ServletException, IOException {
+    System.out.println("Request URI: " + request.getRequestURI());
+    System.out.println("Authorization header: " + request.getHeader("Authorization"));
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
-        jwt = authHeader.substring(7);
-        username = jwtService.extractUsername(jwt);
+    String path = request.getRequestURI();
 
-        if (jwtBlacklistService.isTokenBlacklisted(jwt)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
-        }
-        filterChain.doFilter(request, response);
+    // ⚡ Ignorar rutas públicas
+    if (path.startsWith("/auth/") || path.startsWith("/hoteles/")) {
+      filterChain.doFilter(request, response);
+      return;
     }
+
+    final String authHeader = request.getHeader("Authorization");
+
+    // ⚡ Si no hay token o no empieza con Bearer, simplemente pasar
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
+    final String jwt = authHeader.substring(7);
+    final String username = jwtService.extractUsername(jwt);
+
+    // ⚡ Bloquear solo si el token está en blacklist
+    if (jwtBlacklistService.isTokenBlacklisted(jwt)) {
+      response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+      return;
+    }
+
+    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+      UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+      if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+          userDetails,
+          null,
+          userDetails.getAuthorities()
+        );
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+      }
+    }
+
+    filterChain.doFilter(request, response);
+  }
+
 }

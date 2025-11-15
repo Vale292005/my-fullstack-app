@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.Enum.Rol;
-import com.example.demo.config.JwtUtil;
+import com.example.demo.config.JwtService;
 import com.example.demo.dto.usuariodto.LoginRequestDto;
 import com.example.demo.dto.usuariodto.UsuarioDto;
 import com.example.demo.entity.DocumentosHost;
@@ -23,246 +23,228 @@ import java.util.*;
 @RequiredArgsConstructor
 public class UsuarioService {
 
-    private final UsuarioRepository repository;
-    private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
-    private final UsuarioMapper usuarioMapper;
+  private final UsuarioRepository repository;
+  private final PasswordEncoder passwordEncoder;
+  private final EmailService emailService;
+  private final UsuarioMapper usuarioMapper;
+  private final DocumentosRepository documentosRepository;
+  private final JwtService jwtService; // Cambiado
+  private final Map<String, String> tokensPorEmail = new HashMap<>();
+  private final Set<String> tokensInvalidos = new HashSet<>();
 
-    private final DocumentosRepository documentosRepository;
+  // Listar todos los usuarios en formato DTO
+  public List<UsuarioDto> listarUsuarios() {
+    return repository.findAll()
+      .stream()
+      .map(usuarioMapper::toDto)
+      .toList();
+  }
 
-    private final JwtUtil jwtUtil;
-    private final Map<String, String> tokensPorEmail = new HashMap<>();
-    private final Set<String> tokensInvalidos = new HashSet<>();
+  public void confirmarCuenta(String email) {
+    Usuario usuario = repository.findByEmail(email)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    usuario.setActivo(true);
+    repository.save(usuario);
+  }
 
+  public UsuarioDto findById(Long id) {
+    Usuario user = repository.findById(id)
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+    return usuarioMapper.toDto(user);
+  }
 
-    // Listar todos los usuarios en formato DTO
-    public List<UsuarioDto> listarUsuarios() {
-        return repository.findAll()
-                .stream()
-                .map(usuarioMapper::toDto)
-                .toList();
+  public List<Usuario> findByRol(Rol rol) {
+    return repository.findByRol(rol);
+  }
+
+  public Usuario crearUsuario(Usuario usuario) {
+    if (repository.findByNombre(usuario.getNombre()).isPresent()) {
+      throw new IllegalArgumentException("El usuario ya existe con ese nombre");
     }
-    public void confirmarCuenta(String email) {
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    usuario.setContrasenha(passwordEncoder.encode(usuario.getContrasenha()));
+    return repository.save(usuario);
+  }
 
-        usuario.setActivo(true);
-        repository.save(usuario);
-    }
+  public void eliminarUsuario(Long id) {
+    repository.deleteById(id);
+  }
 
-    // Buscar usuario por ID
-    public UsuarioDto findById(Long id) {
-        Usuario user = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        return usuarioMapper.toDto(user);
-    }
+  public void enviarTokenRecuperacion(String email) {
+    Usuario usuario = repository.findByEmail(email)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo"));
 
-    // Buscar por rol
-    public List<Usuario> findByRol(Rol rol) {
-        return repository.findByRol(rol);
-    }
+    String token = UUID.randomUUID().toString();
+    tokensPorEmail.put(email, token);
 
-    // Crear usuario nuevo
-    public Usuario crearUsuario(Usuario usuario) {
-        if (repository.findByNombre(usuario.getNombre()).isPresent()) {
-            throw new IllegalArgumentException("El usuario ya existe con ese nombre");
-        }
-        usuario.setContrasenha(passwordEncoder.encode(usuario.getContrasenha()));
-        return repository.save(usuario);
-    }
+    emailService.enviarCorreo(
+      usuario.getEmail(),
+      "Recuperación de contraseña",
+      "Usa este token para restablecer tu contraseña: " + token
+    );
+  }
 
+  public void cambiarPassword(String email, String currentPassword, String nuevaContrasenha) {
+    Usuario usuario = repository.findByEmail(email)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    // Eliminar usuario
-    public void eliminarUsuario(Long id) {
-        repository.deleteById(id);
-    }
-
-    // Enviar token de recuperación de contraseña
-    public void enviarTokenRecuperacion(String email) {
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo"));
-
-        String token = UUID.randomUUID().toString();
-        tokensPorEmail.put(email, token);
-
-        emailService.enviarCorreo(
-                usuario.getEmail(),
-                "Recuperación de contraseña",
-                "Usa este token para restablecer tu contraseña: " + token
-        );
-    }
-
-
-    // Cambiar contraseña con validación
-    public void cambiarPassword(String email, String currentPassword, String nuevaContrasenha) {
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        if (!passwordEncoder.matches(currentPassword, usuario.getContrasenha())) {
-            throw new RuntimeException("Contraseña actual incorrecta");
-        }
-
-        usuario.setContrasenha(passwordEncoder.encode(nuevaContrasenha));
-        repository.save(usuario);
+    if (!passwordEncoder.matches(currentPassword, usuario.getContrasenha())) {
+      throw new RuntimeException("Contraseña actual incorrecta");
     }
 
-    // Login valida token de ingreso
+    usuario.setContrasenha(passwordEncoder.encode(nuevaContrasenha));
+    repository.save(usuario);
+  }
 
-    public String login(LoginRequestDto dto) {
-        Usuario usuario = repository.findByEmail(dto.email())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+  // Login usando JwtService
+  public String login(LoginRequestDto dto) {
+    Usuario usuario = repository.findByEmail(dto.email())
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (!usuario.isActivo()) {
-            throw new RuntimeException("Cuenta no confirmada");
-
-        }System.out.println("DTO contraseña: " + dto.contrasenha());
-        System.out.println("Usuario contraseña en BD: " + usuario.getContrasenha());
-
-
-        if (!passwordEncoder.matches(dto.contrasenha(), usuario.getContrasenha())) {
-            throw new RuntimeException("Credenciales inválidas");
-        }
-
-        String token = jwtUtil.generarToken(usuario.getEmail(), usuario.getRol());
-        if (!esTokenValido(token)) {
-            throw new RuntimeException("Token inválido o expirado");
-        }
-
-        return token;
+    if (!usuario.isActivo()) {
+      throw new RuntimeException("Cuenta no confirmada");
     }
 
-
-    // Buscar por nombre
-    public Optional<Usuario> findByNombre(String nombre) {
-        return repository.findByNombre(nombre);
+    if (!passwordEncoder.matches(dto.contrasenha(), usuario.getContrasenha())) {
+      throw new RuntimeException("Credenciales inválidas");
     }
 
-    // Buscar por email
-    public Optional<Usuario> findByEmail(String email) {
-        return repository.findByEmail(email);
-    }
-    public boolean esMayorDeEdad(LocalDate fechaNacimiento) {
-        LocalDate hoy = LocalDate.now();
-        Period edad = Period.between(fechaNacimiento, hoy);
-        return edad.getYears() >= 18;
-    }
-    public void invalidarToken(String token) {
-        tokensInvalidos.add(token);
+    // Generar token con JwtService
+    String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
+
+    if (!esTokenValido(token)) {
+      throw new RuntimeException("Token inválido o expirado");
     }
 
-    public boolean esTokenValido(String token) {
-        return !tokensInvalidos.contains(token);
-    }
-    public boolean activarUsuarioPorToken(String token) {
-        String email = jwtUtil.obtenerEmail(token);
-        var usuario = repository.findByEmail(email).orElse(null);
+    return token;
+  }
 
-        if (usuario == null) return false;
+  public Optional<Usuario> findByNombre(String nombre) {
+    return repository.findByNombre(nombre);
+  }
 
-        if (!usuario.isActivo()) {
-            usuario.setActivo(true);
-            repository.save(usuario);
-            return true;
-        }
+  public Optional<Usuario> findByEmail(String email) {
+    return repository.findByEmail(email);
+  }
 
-        return false;
-    }
-    public boolean reenviarEnlaceConfirmacion(String email) {
-        var usuario = repository.findByEmail(email).orElse(null);
+  public boolean esMayorDeEdad(LocalDate fechaNacimiento) {
+    LocalDate hoy = LocalDate.now();
+    Period edad = Period.between(fechaNacimiento, hoy);
+    return edad.getYears() >= 18;
+  }
 
-        if (usuario == null) return false;
-        if (usuario.isActivo()) return false; // ya está activo, no hay nada que reenviar
+  public void invalidarToken(String token) {
+    tokensInvalidos.add(token);
+  }
 
-        // Generar un nuevo token de confirmación
-        String token = jwtUtil.generarToken(usuario.getEmail(), usuario.getRol());
+  public boolean esTokenValido(String token) {
+    return !tokensInvalidos.contains(token);
+  }
 
-        // Enviar email con el enlace de confirmación
-        String enlace = "http://localhost:8080/auth/confirmar?token=" + token;//CAMBIAR!!!!!!!!!!!!No olvidarse
-        emailService.enviarCorreo(email, "Confirma tu cuenta",
-                "Haz clic en el siguiente enlace para activar tu cuenta:\n" + enlace);
+  public boolean activarUsuarioPorToken(String token) {
+    String email = jwtService.extractUsername(token);
+    var usuario = repository.findByEmail(email).orElse(null);
 
-        return true;
-    }
-    public boolean iniciarRecuperacionPassword(String email) {
-        var usuario = repository.findByEmail(email).orElse(null);
-        if (usuario == null) return false;
+    if (usuario == null) return false;
 
-        // Generar token temporal solo para reset password
-        String token = jwtUtil.generarToken(usuario.getEmail(),usuario.getRol());
-
-        String enlace = "http://localhost:8080/auth/reset-password?token=" + token;
-        emailService.enviarCorreo(
-                email,
-                "Recuperación de contraseña",
-                "Haz clic en este enlace para restablecer tu contraseña:\n" + enlace
-        );
-
-        return true;
+    if (!usuario.isActivo()) {
+      usuario.setActivo(true);
+      repository.save(usuario);
+      return true;
     }
 
-    public void restablecerPassword(String token, String nuevaPassword) {
-        // Obtener el email desde el token
-        String email = jwtUtil.obtenerEmail(token);
+    return false;
+  }
 
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+  public boolean reenviarEnlaceConfirmacion(String email) {
+    var usuario = repository.findByEmail(email).orElse(null);
 
-        usuario.setContrasenha(passwordEncoder.encode(nuevaPassword));
-        repository.save(usuario);
+    if (usuario == null || usuario.isActivo()) return false;
 
-        // Invalida el token si manejas blacklist
-        tokensInvalidos.add(token);
-    }
+    String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
+    String enlace = "http://localhost:8080/auth/confirmar?token=" + token;
+    emailService.enviarCorreo(email, "Confirma tu cuenta",
+      "Haz clic en el siguiente enlace para activar tu cuenta:\n" + enlace);
 
-    public UsuarioDto obtenerPerfil(String email) {
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        return usuarioMapper.toDto(usuario);
-    }
+    return true;
+  }
 
-    public void eliminarCuenta(String email) {
-        Usuario usuario = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        repository.delete(usuario);
-    }
-    public void actualizarUsuario(Long id, UsuarioDto dto) {
-        Usuario usuario = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+  public boolean iniciarRecuperacionPassword(String email) {
+    var usuario = repository.findByEmail(email).orElse(null);
+    if (usuario == null) return false;
 
-        usuario.setNombre(dto.nombre());
-        usuario.setTelefono(dto.telefono());
-        usuario.setEmail(dto.email());
-        usuario.setEdad(dto.edad());
-        usuario.setRol(dto.rol());
-        usuario.setActivo(dto.activo());
+    String token = jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
+    String enlace = "http://localhost:8080/auth/reset-password?token=" + token;
 
-        repository.save(usuario);
-    }
-    public List<DocumentosHost> listarDocumentosPendientes() {
-        return documentosRepository.findByEstado("PENDIENTE");
-    }
+    emailService.enviarCorreo(
+      email,
+      "Recuperación de contraseña",
+      "Haz clic en este enlace para restablecer tu contraseña:\n" + enlace
+    );
 
-    public void aprobarSolicitud(Long userId) {
-        Usuario usuario = repository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        DocumentosHost docs = documentosRepository.findByUsuario(usuario)
-                .orElseThrow(() -> new RuntimeException("No hay documentos cargados"));
-        docs.setAprobado(true);
-        docs.setEstado("APROBADO");
-        usuario.setRol(Rol.ANFITRION);
-        repository.save(usuario);
-        documentosRepository.save(docs);
-    }
+    return true;
+  }
 
-    public void rechazarSolicitud(Long userId) {
-        Usuario usuario = repository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        DocumentosHost docs = documentosRepository.findByUsuario(usuario)
-                .orElseThrow(() -> new RuntimeException("No hay documentos cargados"));
-        docs.setAprobado(false);
-        docs.setEstado("RECHAZADO");
-        documentosRepository.save(docs);
-    }
+  public void restablecerPassword(String token, String nuevaPassword) {
+    String email = jwtService.extractUsername(token);
 
+    Usuario usuario = repository.findByEmail(email)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    usuario.setContrasenha(passwordEncoder.encode(nuevaPassword));
+    repository.save(usuario);
+    tokensInvalidos.add(token);
+  }
+
+  public UsuarioDto obtenerPerfil(String email) {
+    Usuario usuario = repository.findByEmail(email)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    return usuarioMapper.toDto(usuario);
+  }
+
+  public void eliminarCuenta(String email) {
+    Usuario usuario = repository.findByEmail(email)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    repository.delete(usuario);
+  }
+
+  public void actualizarUsuario(Long id, UsuarioDto dto) {
+    Usuario usuario = repository.findById(id)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    usuario.setNombre(dto.nombre());
+    usuario.setTelefono(dto.telefono());
+    usuario.setEmail(dto.email());
+    usuario.setEdad(dto.edad());
+    usuario.setRol(dto.rol());
+    usuario.setActivo(dto.activo());
+
+    repository.save(usuario);
+  }
+
+  public List<DocumentosHost> listarDocumentosPendientes() {
+    return documentosRepository.findByEstado("PENDIENTE");
+  }
+
+  public void aprobarSolicitud(Long userId) {
+    Usuario usuario = repository.findById(userId)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    DocumentosHost docs = documentosRepository.findByUsuario(usuario)
+      .orElseThrow(() -> new RuntimeException("No hay documentos cargados"));
+    docs.setAprobado(true);
+    docs.setEstado("APROBADO");
+    usuario.setRol(Rol.ANFITRION);
+    repository.save(usuario);
+    documentosRepository.save(docs);
+  }
+
+  public void rechazarSolicitud(Long userId) {
+    Usuario usuario = repository.findById(userId)
+      .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    DocumentosHost docs = documentosRepository.findByUsuario(usuario)
+      .orElseThrow(() -> new RuntimeException("No hay documentos cargados"));
+    docs.setAprobado(false);
+    docs.setEstado("RECHAZADO");
+    documentosRepository.save(docs);
+  }
 }
 

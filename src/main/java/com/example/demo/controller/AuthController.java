@@ -26,6 +26,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UsuarioDto dto) {
+        System.out.println("Llego registro usuario con edad: " + dto.edad());
         if (!servicio.esMayorDeEdad(dto.edad())) {
             return ResponseEntity.badRequest().body("Debe ser mayor de edad");
         }
@@ -33,6 +34,7 @@ public class AuthController {
         servicio.crearUsuario(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body("Usuario registrado. Verifique su correo.");
     }
+
     //entrar
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDto dto) {
