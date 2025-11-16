@@ -41,7 +41,7 @@ public class Usuario {
 
   @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Hotel> hoteles = new ArrayList<>();
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
   private boolean activo = true;
 
 }

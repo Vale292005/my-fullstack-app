@@ -62,9 +62,7 @@ public class UsuarioService {
       throw new IllegalArgumentException("El usuario ya existe con ese nombre");
     }
     usuario.setContrasenha(passwordEncoder.encode(usuario.getContrasenha()));
-    if (!usuario.isActivo()) {
-      usuario.setActivo(true);
-    }
+    usuario.setActivo(true);
     return repository.save(usuario);
   }
 
