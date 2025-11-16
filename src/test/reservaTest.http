@@ -1,0 +1,84 @@
+##########################################
+# Variables iniciales
+##########################################
+@baseUrl = http://localhost:8080
+@usuarioId = 1
+@habitacionId = 101
+@nombre = pruebaUsuario
+@email = prueba@mail.com
+@contrasenha = password123
+@token =
+
+##########################################
+# 1️⃣ Registro de usuario (sin token)
+##########################################
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "nombre": "{{nombre}}",
+  "telefono": "3000000000",
+  "email": "{{email}}",
+  "edad": "2000-01-01",
+  "contrasenha": "{{contrasenha}}",
+  "rol": "CLIENTE",
+  "activo": true
+}
+
+### Validación:
+# Status code 201
+
+##########################################
+# 2️⃣ Login y guardar token
+##########################################
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "contrasenha": "{{contrasenha}}"
+}
+
+### Guardar token automáticamente:
+# Copia la respuesta (String JWT) a la variable {{token}}
+# Por ejemplo, si tu HTTP client soporta scripts:
+# @token = <respuesta del body>
+
+##########################################
+# 3️⃣ Crear reserva (token obligatorio)
+##########################################
+POST {{baseUrl}}/reservas
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2wiOiJDTElFTlRFIiwic3ViIjoicHJ1ZWJhQG1haWwuY29tIiwiaWF0IjoxNzYzMzE4NDMwLCJleHAiOjE3NjM0MDQ4MzB9.INu-j8r6zsJ_4kV6CLb524zfo3jU7e9EZ4QiBiZjf30",
+
+{
+  "usuarioId": 1,
+  "habitacionId": 1,
+  "fchEntrada": "2025-11-20",
+  "fchSalida": "2025-11-25",
+  "precioTotal": 500.0
+}
+
+### Validación:
+# Status code 201
+# El body debe contener id, usuarioId, habitacionId, fchEntrada, fchSalida, precioTotal
+
+##########################################
+# 4️⃣ Listar reservas del usuario (token obligatorio)
+##########################################
+GET {{baseUrl}}/reservas/lista/{{usuarioId}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2wiOiJDTElFTlRFIiwic3ViIjoicHJ1ZWJhQG1haWwuY29tIiwiaWF0IjoxNzYzMzE4NDMwLCJleHAiOjE3NjM0MDQ4MzB9.INu-j8r6zsJ_4kV6CLb524zfo3jU7e9EZ4QiBiZjf30",
+
+### Validación:
+# Status code 200
+# Response es un array de reservas con usuarioId = {{usuarioId}}
+
+##########################################
+# 5️⃣ Ver todas las reservas (token obligatorio)
+##########################################
+GET {{baseUrl}}/reservas/all
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2wiOiJDTElFTlRFIiwic3ViIjoicHJ1ZWJhQG1haWwuY29tIiwiaWF0IjoxNzYzMzE4NDMwLCJleHAiOjE3NjM0MDQ4MzB9.INu-j8r6zsJ_4kV6CLb524zfo3jU7e9EZ4QiBiZjf30",
+
+### Validación:
+# Status code 200
+# Response es un array de todas las reservas

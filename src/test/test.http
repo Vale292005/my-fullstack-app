@@ -73,3 +73,5 @@ POST {{baseUrl}}/auth/resend-confirmation?email={{email}}
 # 7️⃣ Recuperar contraseña
 ##########################################
 POST {{baseUrl}}/auth/forgot-password?email={{email}}
+
+
