@@ -19,29 +19,30 @@ import java.util.List;
 @Setter
 public class Usuario {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment
+  private Long id;
 
-    @Column(nullable = false)
-    private String nombre;
+  @Column(nullable = false)
+  private String nombre;
 
-    private String telefono;
+  private String telefono;
 
-    @Column(nullable = false, unique = true) // no se permiten emails repetidos
-    private String email;
+  @Column(nullable = false, unique = true) // no se permiten emails repetidos
+  private String email;
 
-    private LocalDate edad;
+  private LocalDate edad;
 
-    @Column(nullable = false)
-    private String contrasenha;
+  @Column(nullable = false)
+  private String contrasenha;
 
-    @Enumerated(EnumType.STRING) // Guarda el enum como texto
-    private Rol rol;
+  @Enumerated(EnumType.STRING) // Guarda el enum como texto
+  private Rol rol;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Hotel> hoteles = new ArrayList<>();
-    public boolean activo;
+  @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Hotel> hoteles = new ArrayList<>();
+  @Column(nullable = false)
+  private boolean activo = true;
 
 }
 

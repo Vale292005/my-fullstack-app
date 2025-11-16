@@ -62,6 +62,9 @@ public class UsuarioService {
       throw new IllegalArgumentException("El usuario ya existe con ese nombre");
     }
     usuario.setContrasenha(passwordEncoder.encode(usuario.getContrasenha()));
+    if (!usuario.isActivo()) {
+      usuario.setActivo(true);
+    }
     return repository.save(usuario);
   }
 
@@ -104,14 +107,17 @@ public class UsuarioService {
 
     System.out.println("Usuario encontrado: " + usuario.getEmail() + ", activo: " + usuario.isActivo() + ", rol: " + usuario.getRol());
 
+    if (!usuario.isActivo()) {
+      throw new RuntimeException("Cuenta no confirmada");
+    }
 
     if (!passwordEncoder.matches(dto.contrasenha(), usuario.getContrasenha())) {
       throw new RuntimeException("Credenciales inválidas");
     }
 
+
     return jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
   }
-
 
 
   public Optional<Usuario> findByNombre(String nombre) {
