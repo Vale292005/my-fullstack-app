@@ -12,14 +12,15 @@ POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "nombre": "Juan",
-  "telefono": "3000000000",
-  "email": "{{email}}",
-  "edad": "2005-01-01",
-  "contrasenha": "123456",
+  "nombre": "Carlos",
+  "telefono": "3111111111",
+  "email": "carlos@example.com",
+  "edad": "2000-05-15",
+  "contrasenha": "password123",
   "rol": "CLIENTE",
   "activo": true
 }
+
 
 ###
 

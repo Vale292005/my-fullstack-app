@@ -72,22 +72,24 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    // Permitir cualquier origen (útil en Docker y local)
-    configuration.setAllowedOriginPatterns(List.of("*"));
+    configuration.setAllowedOrigins(List.of(
+      "http://localhost",
+      "http://localhost:80",
+      "http://localhost:3000",
+      "http://localhost:4200",
+      "http://localhost:5173"
+    ));
 
-    // Métodos HTTP permitidos
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-    // Headers permitidos
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setExposedHeaders(List.of("*"));
-
-    // Permitir envío de credenciales (cookies, JWT, etc.)
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
+
     return source;
   }
+
 }
 

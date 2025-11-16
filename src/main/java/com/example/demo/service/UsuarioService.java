@@ -97,21 +97,21 @@ public class UsuarioService {
 
   // Login usando JwtService
   public String login(LoginRequestDto dto) {
+    System.out.println("Login recibido: " + dto.email() + " / " + dto.contrasenha());
 
     Usuario usuario = repository.findByEmail(dto.email())
       .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    if (!usuario.isActivo()) {
-      throw new RuntimeException("Cuenta no confirmada");
-    }
+    System.out.println("Usuario encontrado: " + usuario.getEmail() + ", activo: " + usuario.isActivo() + ", rol: " + usuario.getRol());
+
 
     if (!passwordEncoder.matches(dto.contrasenha(), usuario.getContrasenha())) {
       throw new RuntimeException("Credenciales inválidas");
     }
 
-    // Generar token
     return jwtService.generateToken(usuario.getEmail(), usuario.getRol().name());
   }
+
 
 
   public Optional<Usuario> findByNombre(String nombre) {
